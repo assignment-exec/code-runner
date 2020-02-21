@@ -1,4 +1,4 @@
-module code-runner
+module coderunner
 
 go 1.13
 

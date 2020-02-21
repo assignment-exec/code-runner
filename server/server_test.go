@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"bytes"
@@ -13,17 +13,21 @@ import (
 )
 
 // Creates a new file upload http request with params as cmd arguments.
-func newRequest(uri string, fileKeyName string, params map[string]string, path string) (*http.Request, error) {
+func newRequest(uri string, params map[string]string, path string) (*http.Request, error) {
 	file, err := os.Open(path)
 	if err != nil {
+		log.Fatal(err)
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		err = file.Close()
+	}()
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile(fileKeyName, filepath.Base(path))
+	part, err := writer.CreateFormFile("file", filepath.Base(path))
 	if err != nil {
+		log.Fatal(err)
 		return nil, err
 	}
 	_, err = io.Copy(part, file)
@@ -34,6 +38,7 @@ func newRequest(uri string, fileKeyName string, params map[string]string, path s
 	
 	err = writer.Close()
 	if err != nil {
+		log.Fatal(err)
 		return nil, err
 	}
 
@@ -49,9 +54,10 @@ func sendRequest(filePath string) (*http.Response, error) {
 		"arg2": "200",
 	}
 
-	request, err := newRequest("http://localhost:8081/upload", "file", params, filePath)
+	request, err := newRequest("http://localhost:8082/upload", params, filePath)
 	if err != nil {
 		log.Fatal(err)
+		return nil,err
 	}
 	client := &http.Client{}
 	resp, err := client.Do(request)
@@ -60,30 +66,30 @@ func sendRequest(filePath string) (*http.Response, error) {
 
 // Sends request for a zip file. For testing purpose only.
 func sendZip() (*http.Response, error) {
-	return  sendRequest("/home/bhargavi/test_archives/final-balandi1-master.zip")
+	return  sendRequest("test-archive_1.zip")
 }
 
 // Sends request for a tar file. For testing purpose only.
 func sendTar() (*http.Response, error) {
-	return  sendRequest("/home/bhargavi/test_archives/p1-balandi1.tar")
+	return  sendRequest("test-archive_2.tar")
 }
 
 // Sends request for a tar.gz file. For testing purpose only.
 func sendTarGz() (*http.Response, error) {
-	return  sendRequest("/home/bhargavi/test_archives/final.tar.gz")
+	return  sendRequest("test-archive_3.tar.gz")
 }
 
 func TestSendZip(t *testing.T) {
 	_, err := sendZip()
-	assert.Equal(t,err,nil)
+	assert.Nil(t,err)
 }
 
 func TestSendTar(t *testing.T) {
 	_, err := sendTar()
-	assert.Equal(t,err,nil)
+	assert.Nil(t,err)
 }
 
 func TestSendTarGz(t *testing.T) {
 	_, err := sendTarGz()
-	assert.Equal(t,err,nil)
+	assert.Nil(t,err)
 }

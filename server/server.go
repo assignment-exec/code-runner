@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"archive/tar"
@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sync"
 )
 
 // Parses the client request and uploads the file.
@@ -14,13 +15,17 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("File Upload Endpoint Hit")
 
 	// Give a max limit for file upload.
-	r.ParseMultipartForm(10 << 20)
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 
 	// Returns the first file for the given key 'file'.
 	file, handler, err := r.FormFile("file")
 	if err != nil {
 		fmt.Println("Error Retrieving the File")
-		fmt.Println(err)
+		log.Fatal(err)
 		return
 	}
 
@@ -30,13 +35,19 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		arg := r.FormValue(argName)
 		fmt.Println(arg)
 	}
-	defer file.Close()
+	defer func() {
+		err = file.Close()
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+	}()
 
 	fileHeader := make([]byte,512)
 	if _, err := file.Read(fileHeader)
 		err != nil {
 			log.Fatal(err)
-	}
+		}
 
 	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
 	fmt.Printf("File Size: %+v\n", handler.Size)
@@ -44,38 +55,51 @@ func upload(w http.ResponseWriter, r *http.Request) {
 
 	// Based on the type of file compression, read the file.
 	if http.DetectContentType(fileHeader) == "application/octet-stream" {	// For tar or tar.gz file.
-		untared := tar.NewReader(file)
+		unTared := tar.NewReader(file)
 		for {
-			header, err := untared.Next()
+			header, err := unTared.Next()
 			if err == io.EOF {
 				break // End of tar file.
 			}
 			if err != nil {
 				log.Fatal(err)
+				return
 			}
 			fmt.Println(header.Name)
 
 		}
 	} else {	// For zip file.
-		unzipped, _ := zip.NewReader(file,handler.Size)
-		for _,f := range unzipped.File {
+		unZipped, _ := zip.NewReader(file,handler.Size)
+		for _,f := range unZipped.File {
 			fmt.Println(f.Name)
 		}
 	}
 
 	// Write status to the response to be sent to client.
 	w.Header().Add("Content-Type", "application/json")
-	io.WriteString(w, `{"Status":"Successfully Uploaded File(s)"}`)
+	_,err = io.WriteString(w, `{"Status":"Successfully Uploaded File(s)"}`)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func main() {
-
-	// Start service at given port.
-	http.HandleFunc("/upload", upload)
-	port := "8081"
+func listenAndServe(wg *sync.WaitGroup) {
+	defer wg.Done()
+	port := "8082"
 
 	log.Println("** Service Started on Port " + port + " **")
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal(err)
 	}
+}
+func StartServer() {
+
+	var wg sync.WaitGroup
+
+	// Start service at given port.
+	http.HandleFunc("/upload", upload)
+
+	wg.Add(1)
+	go listenAndServe(&wg)
+	wg.Wait()
 }
