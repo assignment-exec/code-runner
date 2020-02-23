@@ -3,6 +3,7 @@ package server
 import (
 	"archive/tar"
 	"archive/zip"
+	"coderunner/constants"
 	"fmt"
 	"io"
 	"log"
@@ -14,85 +15,87 @@ import (
 func upload(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("File Upload Endpoint Hit")
 
-	// Give a max limit for file upload.
-	err := r.ParseMultipartForm(10 << 20)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
+	var responseString string
+	fileHeader := make([]byte, 512)
 
 	// Returns the first file for the given key 'file'.
-	file, handler, err := r.FormFile("file")
+	file, handler, err := r.FormFile(constants.FormFileKey)
 	if err != nil {
-		fmt.Println("Error Retrieving the File")
-		log.Fatal(err)
-		return
+		responseString = `"FileError":"Error in retrieving the file"`
+		log.Println("Error Retrieving the File", err)
+		goto End
 	}
 
 	// Read the command line arguments (additional parameters passed).
-	for index := 1;index <= len(r.Form); index++ {
-		argName := fmt.Sprintf("%s%d","arg", index)
+	for index := 1; index <= len(r.Form); index++ {
+		argName := fmt.Sprintf("%s%d", "arg", index)
 		arg := r.FormValue(argName)
 		fmt.Println(arg)
 	}
 	defer func() {
 		err = file.Close()
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			return
 		}
 	}()
 
-	fileHeader := make([]byte,512)
-	if _, err := file.Read(fileHeader)
-		err != nil {
-			log.Fatal(err)
-		}
+	if _, err := file.Read(fileHeader); err != nil {
+		log.Println(err)
+		goto End
+	}
 
-	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
+	// Based on the type of file compression, read the file.
+	if http.DetectContentType(fileHeader) == "application/octet-stream" {
+		// For tar or tar.gz file.
+		unTarred := tar.NewReader(file)
+		for {
+			header, err := unTarred.Next()
+			if err == io.EOF {
+				// End of tar file.
+				break
+			}
+			if err != nil {
+				responseString += `"UntarError":"Error in untarring uploaded file"`
+				log.Println(err)
+				goto End
+			}
+			fmt.Println(header.Name)
+		}
+	} else {
+		// For zip file.
+		unZipped, err := zip.NewReader(file, handler.Size)
+		if err != nil {
+			responseString += `"UnzipError":"Error in unzipping uploaded file"`
+			log.Println(err)
+			goto End
+		}
+		for _, file := range unZipped.File {
+			fmt.Println(file.Name)
+		}
+	}
+	responseString += `"UploadStatus":"Successfully Uploaded File(s)"`
 	fmt.Printf("File Size: %+v\n", handler.Size)
 	fmt.Printf("MIME Header: %+v\n", http.DetectContentType(fileHeader))
 
-	// Based on the type of file compression, read the file.
-	if http.DetectContentType(fileHeader) == "application/octet-stream" {	// For tar or tar.gz file.
-		unTared := tar.NewReader(file)
-		for {
-			header, err := unTared.Next()
-			if err == io.EOF {
-				break // End of tar file.
-			}
-			if err != nil {
-				log.Fatal(err)
-				return
-			}
-			fmt.Println(header.Name)
-
-		}
-	} else {	// For zip file.
-		unZipped, _ := zip.NewReader(file,handler.Size)
-		for _,f := range unZipped.File {
-			fmt.Println(f.Name)
-		}
-	}
-
-	// Write status to the response to be sent to client.
+End:
+	// Write the response to be sent to client.
 	w.Header().Add("Content-Type", "application/json")
-	_,err = io.WriteString(w, `{"Status":"Successfully Uploaded File(s)"}`)
+	_, err = io.WriteString(w, `{`+responseString+`}`)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 }
 
-func listenAndServe(wg *sync.WaitGroup) {
+func listenAndServe(wg *sync.WaitGroup, port string) {
 	defer wg.Done()
-	port := "8082"
 
-	log.Println("** Service Started on Port " + port + " **")
+	log.Printf("** Service Started on Port " + port + " **")
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal(err)
 	}
 }
-func StartServer() {
+func StartServer(port string) {
 
 	var wg sync.WaitGroup
 
@@ -100,6 +103,6 @@ func StartServer() {
 	http.HandleFunc("/upload", upload)
 
 	wg.Add(1)
-	go listenAndServe(&wg)
+	go listenAndServe(&wg, port)
 	wg.Wait()
 }

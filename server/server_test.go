@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"coderunner/constants"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"log"
@@ -25,7 +26,7 @@ func newRequest(uri string, params map[string]string, path string) (*http.Reques
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("file", filepath.Base(path))
+	part, err := writer.CreateFormFile(constants.FormFileKey, filepath.Base(path))
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -35,7 +36,7 @@ func newRequest(uri string, params map[string]string, path string) (*http.Reques
 	for key, val := range params {
 		_ = writer.WriteField(key, val)
 	}
-	
+
 	err = writer.Close()
 	if err != nil {
 		log.Fatal(err)
@@ -54,10 +55,10 @@ func sendRequest(filePath string) (*http.Response, error) {
 		"arg2": "200",
 	}
 
-	request, err := newRequest("http://localhost:8082/upload", params, filePath)
+	request, err := newRequest("http://localhost:8083/upload", params, filePath)
 	if err != nil {
 		log.Fatal(err)
-		return nil,err
+		return nil, err
 	}
 	client := &http.Client{}
 	resp, err := client.Do(request)
@@ -66,30 +67,30 @@ func sendRequest(filePath string) (*http.Response, error) {
 
 // Sends request for a zip file. For testing purpose only.
 func sendZip() (*http.Response, error) {
-	return  sendRequest("test-archive_1.zip")
+	return sendRequest("test-archive_1.zip")
 }
 
 // Sends request for a tar file. For testing purpose only.
 func sendTar() (*http.Response, error) {
-	return  sendRequest("test-archive_2.tar")
+	return sendRequest("test-archive_2.tar")
 }
 
 // Sends request for a tar.gz file. For testing purpose only.
 func sendTarGz() (*http.Response, error) {
-	return  sendRequest("test-archive_3.tar.gz")
+	return sendRequest("test-archive_3.tar.gz")
 }
 
 func TestSendZip(t *testing.T) {
 	_, err := sendZip()
-	assert.Nil(t,err)
+	assert.Nil(t, err)
 }
 
 func TestSendTar(t *testing.T) {
 	_, err := sendTar()
-	assert.Nil(t,err)
+	assert.Nil(t, err)
 }
 
 func TestSendTarGz(t *testing.T) {
 	_, err := sendTarGz()
-	assert.Nil(t,err)
+	assert.Nil(t, err)
 }

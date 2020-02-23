@@ -7,8 +7,8 @@ import (
 )
 
 type DockerConfig struct {
-	Course string `yaml:"course"`
-	OperatingSystem string `yaml:"operatingSystem"`
+	Course              string `yaml:"course"`
+	OperatingSystem     string `yaml:"operatingSystem"`
 	ProgrammingLanguage string `yaml:"programmingLanguage"`
 }
 

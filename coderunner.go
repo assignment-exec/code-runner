@@ -1,8 +1,18 @@
 package main
+
 import (
 	"coderunner/server"
+	"flag"
+	"fmt"
 )
-func main() {
 
-	server.StartServer()
+var portNumber = flag.String("port", "8082", "Port number for server to listen on")
+
+func init() {
+	flag.StringVar(portNumber, "p", "8082", "Port number for server to listen on")
+}
+func main() {
+	flag.Parse()
+	fmt.Println(*portNumber)
+	server.StartServer(*portNumber)
 }
