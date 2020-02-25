@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"sync"
 )
@@ -15,15 +16,31 @@ import (
 func upload(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("File Upload Endpoint Hit")
 
-	var responseString string
+	w.Header().Add("Content-Type", "application/json")
+	responseString := readFormData(r)
+
+	if len(responseString) <= 0 {
+		responseString += `"Upload Status":"Successfully Uploaded File(s)"`
+	}
+
+	// Write the response to be sent to client.
+	w.Header().Add("Content-Type", "application/json")
+	_, err := io.WriteString(w, `{`+responseString+`}`)
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+// Reads the compressed file and invokes function to decompress it
+func readFormData(r *http.Request) string {
 	fileHeader := make([]byte, 512)
 
 	// Returns the first file for the given key 'file'.
 	file, handler, err := r.FormFile(constants.FormFileKey)
 	if err != nil {
-		responseString = `"FileError":"Error in retrieving the file"`
+		responseString := `"File Error":"Error in retrieving the file"`
 		log.Println("Error Retrieving the File", err)
-		goto End
+		return responseString
 	}
 
 	// Read the command line arguments (additional parameters passed).
@@ -42,9 +59,16 @@ func upload(w http.ResponseWriter, r *http.Request) {
 
 	if _, err := file.Read(fileHeader); err != nil {
 		log.Println(err)
-		goto End
 	}
 
+	fmt.Printf("File Size: %+v\n", handler.Size)
+	fmt.Printf("MIME Header: %+v\n", http.DetectContentType(fileHeader))
+
+	return decompressFile(file, fileHeader, handler)
+}
+
+// Reads all files from the uploaded compressed file
+func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.FileHeader) string {
 	// Based on the type of file compression, read the file.
 	if http.DetectContentType(fileHeader) == "application/octet-stream" {
 		// For tar or tar.gz file.
@@ -56,9 +80,9 @@ func upload(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 			if err != nil {
-				responseString += `"UntarError":"Error in untarring uploaded file"`
+				responseString := `"UnTar Error":"Error in un-tarring uploaded file"`
 				log.Println(err)
-				goto End
+				return responseString
 			}
 			fmt.Println(header.Name)
 		}
@@ -66,25 +90,16 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		// For zip file.
 		unZipped, err := zip.NewReader(file, handler.Size)
 		if err != nil {
-			responseString += `"UnzipError":"Error in unzipping uploaded file"`
+			responseString := `"Unzip Error":"Error in unzipping uploaded file"`
 			log.Println(err)
-			goto End
+			return responseString
 		}
 		for _, file := range unZipped.File {
 			fmt.Println(file.Name)
 		}
 	}
-	responseString += `"UploadStatus":"Successfully Uploaded File(s)"`
-	fmt.Printf("File Size: %+v\n", handler.Size)
-	fmt.Printf("MIME Header: %+v\n", http.DetectContentType(fileHeader))
 
-End:
-	// Write the response to be sent to client.
-	w.Header().Add("Content-Type", "application/json")
-	_, err = io.WriteString(w, `{`+responseString+`}`)
-	if err != nil {
-		log.Println(err)
-	}
+	return ""
 }
 
 func listenAndServe(wg *sync.WaitGroup, port string) {

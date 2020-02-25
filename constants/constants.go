@@ -1,3 +1,3 @@
 package constants
 
-var FormFileKey = "file"
+const FormFileKey = "file"
