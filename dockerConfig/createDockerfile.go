@@ -13,7 +13,7 @@ func ValidateConfig(config *DockerConfig) bool {
 	out, _ := exec.Command("/bin/sh", "-c", cmdStr).Output()
 	//fmt.Println("%d", len(out))
 	if len(out) <= 90 {
-		return  false
+		return false
 	}
 
 	// validate programming language image
@@ -24,15 +24,16 @@ func ValidateConfig(config *DockerConfig) bool {
 		return false
 	}
 
-	return  true
+	return true
 }
+
 // function to write the validated config to dockerfile
 func createDockerfile(config DockerConfig) {
 
 	// prepare the data to be written
 
 	err := ioutil.WriteFile("Dockerfile", []byte("Dumping bytes to a file\n"), 0666)
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 	}
 }
