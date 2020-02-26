@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-test:
-    name: Build and Test
+    name: Build and Test Server
     runs-on: ubuntu-18.04
     steps:
     - name: Golang Setup
@@ -22,9 +22,9 @@ jobs:
     - name: Get Dependencies using Go Modules
       run: go mod download
 
-    - name: Build Coderunner
-      run: go build -o coderunner
+    - name: Build Server
+      run: go build -o runserver
       
-    - name: Run server
-      run: ./coderunner -port '8083' & go test ./...
+    - name: Run and test server
+      run: ./runserver -port '8083' & go test ./...
       timeout-minutes: 2
