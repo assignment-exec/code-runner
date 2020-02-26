@@ -20,4 +20,5 @@ clean:
 run: build
 	./$(BINARY_NAME)
 
-dependency: $(GOMOD) download
+dependency:
+	$(GOMOD) download
