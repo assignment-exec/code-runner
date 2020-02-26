@@ -24,6 +24,3 @@ jobs:
 
     - name: Build Coderunner
       run: go build -o coderunner
-    
-    - name: Run Unit Tests
-      run: go test ./...
