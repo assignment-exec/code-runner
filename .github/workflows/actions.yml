@@ -26,5 +26,5 @@ jobs:
       run: go build -o coderunner
       
     - name: Run server
-      run: ./coderunner -port '8083' &
-      timeout-minutes: 1
+      run: ./coderunner -port '8083' & go test ./...
+      timeout-minutes: 2
