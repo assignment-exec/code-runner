@@ -4,21 +4,21 @@ GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
 GOMOD=$(GOCMD) mod
-BINARY_NAME=serverrun
+BINARY=code-runner-server
 
 all: build
 build:
-	$(GOBUILD) -o $(BINARY_NAME)
+	$(GOBUILD) -o $(BINARY)
 
 test:
 	$(GOTEST) ./...
 
 clean:
 	$(GOCLEAN)
-	rm -f $(BINARY_NAME)
+	rm -f $(BINARY)
 
 run: build
-	./$(BINARY_NAME)
+	./$(BINARY)
 
 dependency:
 	$(GOMOD) download
