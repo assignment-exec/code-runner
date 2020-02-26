@@ -26,6 +26,4 @@ jobs:
       run: go build -o coderunner
       
     - name: Run server
-      with:
-          start: ./coderunner -port "8083"
-          wait-on: 'http://localhost:8083'
+      run: ./coderunner -port '8083'
