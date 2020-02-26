@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-test:
-    name: Build and Test Server
+    name: Build and Test
     runs-on: ubuntu-18.04
     steps:
     - name: Golang Setup
@@ -20,11 +20,11 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Get Dependencies using Go Modules
-      run: go mod download
+      run: make dependency
 
     - name: Build Server
-      run: go build -o runserver
+      run: make
       
-    - name: Run and test server
+    - name: Test server
       run: ./runserver -port '8083' & go test ./...
       timeout-minutes: 2
