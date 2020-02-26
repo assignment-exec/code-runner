@@ -26,5 +26,5 @@ jobs:
       run: make
       
     - name: Test server
-      run: ./runserver -port '8083' & go test ./...
+      run: ./code-runner-server -port '8083' & go test ./...
       timeout-minutes: 2
