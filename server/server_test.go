@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"coderunner/constants"
+	"flag"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"log"
@@ -12,6 +13,8 @@ import (
 	"path/filepath"
 	"testing"
 )
+
+var portNumber = flag.String("port", "8082", "Port number for server to listen on")
 
 // Creates a new file upload http request with params as cmd arguments.
 func newRequest(uri string, params map[string]string, path string) (*http.Request, error) {
@@ -49,13 +52,13 @@ func newRequest(uri string, params map[string]string, path string) (*http.Reques
 }
 
 // Sends the constructed request to server.
-func sendRequest(filePath string) (*http.Response, error) {
+func sendRequest(filePath string, port string) (*http.Response, error) {
 	params := map[string]string{
 		"arg1": "100",
 		"arg2": "200",
 	}
 
-	request, err := newRequest("http://localhost:8083/upload", params, filePath)
+	request, err := newRequest("http://localhost:"+port+"/upload", params, filePath)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -66,31 +69,34 @@ func sendRequest(filePath string) (*http.Response, error) {
 }
 
 // Sends request for a zip file. For testing purpose only.
-func sendZip() (*http.Response, error) {
-	return sendRequest("test-archive_1.zip")
+func sendZip(port string) (*http.Response, error) {
+	return sendRequest("test-archive_1.zip", port)
 }
 
 // Sends request for a tar file. For testing purpose only.
-func sendTar() (*http.Response, error) {
-	return sendRequest("test-archive_2.tar")
+func sendTar(port string) (*http.Response, error) {
+	return sendRequest("test-archive_2.tar", port)
 }
 
 // Sends request for a tar.gz file. For testing purpose only.
-func sendTarGz() (*http.Response, error) {
-	return sendRequest("test-archive_3.tar.gz")
+func sendTarGz(port string) (*http.Response, error) {
+	return sendRequest("test-archive_3.tar.gz", port)
 }
 
 func TestSendZip(t *testing.T) {
-	_, err := sendZip()
+	port := *portNumber
+	_, err := sendZip(port)
 	assert.Nil(t, err)
 }
 
 func TestSendTar(t *testing.T) {
-	_, err := sendTar()
+	port := *portNumber
+	_, err := sendTar(port)
 	assert.Nil(t, err)
 }
 
 func TestSendTarGz(t *testing.T) {
-	_, err := sendTarGz()
+	port := *portNumber
+	_, err := sendTarGz(port)
 	assert.Nil(t, err)
 }
