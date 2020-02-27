@@ -20,7 +20,11 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Get Dependencies using Go Modules
-      run: go mod download
+      run: make dependency
 
-    - name: Build Coderunner
-      run: go build -o coderunner
+    - name: Build Server
+      run: make
+      
+    - name: Test server
+      run: ./code-runner-server & go test ./...
+      timeout-minutes: 2
