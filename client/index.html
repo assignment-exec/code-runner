@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="index.css">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+	<title> 
+            Code Runner
+        </title> 
+        <!-- add icon link -->
+        <link rel = "icon" href = "images/logo.png"  type = "image/x-icon">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="container">
+     <div class="page-header">
+	 <img src="images/logo.png" alt="logo" height="40" class="pull-left" />
+		<h1>Code Runner</h1>
+	</div>
+<form>
+    <label for="assgn">Assignment:</label>
+	<input type="file" name="file" id="file">
+    <br><br>
+    <label for="Cmd">Command line arguments:</label>
+    <input type="button" value="Add">
+    <br><br>
+    <input type="submit" value="Submit">
+    <input type="button" value="Build & Run">
+    <br><br><br>
+    <label for="Output">Output:</label><br>
+    <textarea rows="5" cols="50" name="output"
+              id="output" readonly="true"></textarea>
+</form>
+</div>
+</body>
+</html>
