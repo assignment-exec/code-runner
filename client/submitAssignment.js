@@ -17,5 +17,5 @@ var x = 1
 function appendRow()
 {
    var d = document.getElementById('cmdArgs');
-   d.innerHTML += "<br><input type='text' id='arg"+ x++ +"'><br >";
+   d.innerHTML += "<div><input type='text' id='key"+ x +"' name='key"+ x +"'><input type='text' id='arg"+ x +"' name='arg"+ x++ +"'></div>";
 }
