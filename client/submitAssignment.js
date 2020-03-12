@@ -54,12 +54,12 @@ var x = 1
 function appendRow()
 {
    var d = document.getElementById('cmdArgs');
-   d.innerHTML += "<div class='form-group row'>\
+   d.insertAdjacentHTML('beforeend',"<div class='form-group row'>\
    <div class='col-sm-2'>\
    <input type='text' class='form-control' id='key"+ x +"' name='key"+ x +"'>\
    </div>\
    <div class='col-sm-2'>\
    <input type='text' class='form-control' id='arg"+ x +"' name='arg"+ x++ +"'>\
    </div>\
-   </div>";
+   </div>");
 }
