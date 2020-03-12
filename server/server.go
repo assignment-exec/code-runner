@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"coderunner/constants"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -16,19 +17,24 @@ import (
 func upload(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("File Upload Endpoint Hit")
 
-	w.Header().Add("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	responseString := readFormData(r)
 
+	log.Println(responseString)
 	if len(responseString) <= 0 {
 		responseString += `"Upload Status":"Successfully Uploaded File(s)"`
 	}
 
-	// Write the response to be sent to client.
-	w.Header().Add("Content-Type", "application/json")
-	_, err := io.WriteString(w, `{`+responseString+`}`)
+	responseS, err := json.Marshal(responseString)
 	if err != nil {
 		log.Println(err)
 	}
+
+	// Write the response to be sent to client.
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseS)
 }
 
 // Reads the compressed file and invokes function to decompress it
