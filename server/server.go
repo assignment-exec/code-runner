@@ -21,7 +21,6 @@ func upload(w http.ResponseWriter, r *http.Request) {
 
 	responseString := readFormData(r)
 
-	log.Println(responseString)
 	if len(responseString) <= 0 {
 		responseString += `"Upload Status":"Successfully Uploaded File(s)"`
 	}

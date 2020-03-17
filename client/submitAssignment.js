@@ -1,5 +1,6 @@
 
-$("#myForm").submit(function(event) {
+// Creates a http POST request to the server and sends assignment tar ball and cmg args 
+$("#mainForm").submit(function(event) {
     var formData = new FormData(this);
     event.stopPropagation();
     event.preventDefault();
@@ -24,9 +25,24 @@ $("#myForm").submit(function(event) {
     return false;
   });
 
-// function to validate the file upload and command line args
+// Verifys the file type (should be .zip, .tar or .tar.gz)
+function verifyFiles(fileInput) {
+    var files = fileInput.files; 
+    let allowedFiles = ["application/zip", "application/x-tar","application/gzip"];
+    let allowedExtensions = [".zip", ".tar", ".tar.gz"];
+
+    var fileType = files[0].type; 
+    let output = document.getElementById("fileError");
+	if (!allowedFiles.includes(fileType)) {
+        output.innerHTML = "Please upload files having extensions: " + allowedExtensions.join(', ') + " only.";
+        return false;
+    }
+	output.innerHTML = "";
+    return true;
+}
+// Validates the file upload and command line args
 function validateForm() {
-  var fileName = document.forms["myForm"]["file"].value;
+  var fileName = document.forms["mainForm"]["file"].value;
   if (fileName == "") {
 	let output = document.getElementById("fileError");
 	output.innerHTML = "Please select a file to upload";
@@ -34,32 +50,18 @@ function validateForm() {
   }
 }
 
-// function to verify the file type (should be .zip, .tar or .tar.gz)
-function verifyFiles() {
-    let allowedFiles = [".zip", ".tar", ".tar.gz"];
-    let fileUpload = document.getElementById("file");
-    let output = document.getElementById("fileError");
-    let regex = new RegExp("([a-zA-Z0-9\s_\\.\-:()])+(" + allowedFiles.join('|') + ")$");
-    if (!regex.test(fileUpload.value.toLowerCase())) {
-        output.innerHTML = "Please upload files having extensions: " + allowedFiles.join(', ') + " only.";
-        return false;
-    }
-    output.innerHTML = "";
-    return true;
-}
+var argCount = 1
 
-var x = 1
-
-// function to add key and argument text boxes on click of "Add" button
+// Adds key and argument text boxes on click of "Add" button
 function appendRow()
 {
    var d = document.getElementById('cmdArgs');
    d.insertAdjacentHTML('beforeend',"<div class='form-group row'>\
    <div class='col-sm-2'>\
-   <input type='text' class='form-control' id='key"+ x +"' name='key"+ x +"'>\
+   <input type='text' class='form-control' id='key"+ argCount +"' name='key"+ argCount +"'>\
    </div>\
    <div class='col-sm-2'>\
-   <input type='text' class='form-control' id='arg"+ x +"' name='arg"+ x++ +"'>\
+   <input type='text' class='form-control' id='arg"+ argCount +"' name='arg"+ argCount++ +"'>\
    </div>\
    </div>");
 }

@@ -15,25 +15,25 @@
 	</head>
 	<body>
 	<div class="container top-container">
-			 <div class="header" id="app-header">
+			 <div class="header" id="appHeader">
 			 <div class="side-nav sn-bg-4 mdb-sidenav fixed">
 				<img src="images/logo.png" alt="logo" height="40" class="pull-left heading" />
 				<h1>Code Runner</h1>
 			</div>
 			</div>
 			<div class="content"> 
-			<form id="myForm">
+			<form id="mainForm">
 				<div class="form-group row">
 					<label for="assgn" class="col-sm-2 col-form-label">Assignment:</label>
 					<div class="col-sm-5">
-						<input type="file" id="file" name="file" class="form-control" onchange="verifyFiles()">
+						<input type="file" id="file" name="file" class="form-control" onchange="verifyFiles(this)">
 					</div>
 					<div class="col-sm-5 file-error">
 						<span id="fileError" class="text-danger"></span>
 					</div>
 				</div>
 				<div class="form-group row">
-					<label for="Cmd" class="col-sm-2 col-form-label">Command line arguments:</label>
+					<label for="cmd" class="col-sm-2 col-form-label">Command line arguments:</label>
 					<input type="button" value="Add" id="addArg" onclick="appendRow()" class="btn">
 				</div>
 				<div id="cmdArgs">
