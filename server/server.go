@@ -48,14 +48,8 @@ func readFormData(r *http.Request) string {
 		return responseString
 	}
 
-	// Read the command line arguments (additional parameters passed).
-	for index := 1; index <= len(r.Form); index++ {
-		keyName := fmt.Sprintf("%s%d", "key", index)
-		argName := fmt.Sprintf("%s%d", "arg", index)
-		key := r.FormValue(keyName)
-		arg := r.FormValue(argName)
-		fmt.Printf("%s = %s\n", key, arg)
-	}
+	// TODO: read the command line arguments
+
 	defer func() {
 		err = file.Close()
 		if err != nil {
