@@ -36,3 +36,12 @@ Use multipart/form data option(-F) to provide the assignment submission file and
 ```commandline
 curl <server_ip_address:port_number> -F <compressed_filepath> -F <arg1> -F <arg2> ...
 ```
+
+## Web page to Submit Assignment
+![](docs/webPage.png)
+
+Submit your assignment through the web page as shown in the figure above.
+- Choose the assignment tar ball.
+- Add command line arguments required to run the assignment using `Add` button.
+- Click on `Submit` button to upload the details to the server.
+- The status of upload will be displayed in the `Output` section as shown above.

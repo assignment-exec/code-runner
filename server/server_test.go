@@ -54,7 +54,9 @@ func newRequest(uri string, params map[string]string, path string) (*http.Reques
 // Sends the constructed request to server.
 func sendRequest(filePath string, port string) (*http.Response, error) {
 	params := map[string]string{
+		"key1": "Key1",
 		"arg1": "100",
+		"key2": "Key2",
 		"arg2": "200",
 	}
 

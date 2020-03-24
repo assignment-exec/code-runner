@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"coderunner/constants"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -16,19 +17,23 @@ import (
 func upload(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("File Upload Endpoint Hit")
 
-	w.Header().Add("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	responseString := readFormData(r)
 
 	if len(responseString) <= 0 {
 		responseString += `"Upload Status":"Successfully Uploaded File(s)"`
 	}
 
-	// Write the response to be sent to client.
-	w.Header().Add("Content-Type", "application/json")
-	_, err := io.WriteString(w, `{`+responseString+`}`)
+	responseS, err := json.Marshal(responseString)
 	if err != nil {
 		log.Println(err)
 	}
+
+	// Write the response to be sent to client.
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseS)
 }
 
 // Reads the compressed file and invokes function to decompress it
@@ -43,12 +48,8 @@ func readFormData(r *http.Request) string {
 		return responseString
 	}
 
-	// Read the command line arguments (additional parameters passed).
-	for index := 1; index <= len(r.Form); index++ {
-		argName := fmt.Sprintf("%s%d", "arg", index)
-		arg := r.FormValue(argName)
-		fmt.Println(arg)
-	}
+	// TODO: read the command line arguments
+
 	defer func() {
 		err = file.Close()
 		if err != nil {
