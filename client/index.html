@@ -25,7 +25,7 @@
 			<form id="mainForm">
 				<div class="form-group row">
 					<label for="assgn" class="col-sm-2 col-form-label">Assignment:</label>
-					<div class="col-sm-5">
+					<div class="col-sm-4">
 						<input type="file" id="file" name="file" class="form-control" onchange="verifyFiles(this)">
 					</div>
 					<div class="col-sm-5 file-error">
@@ -33,18 +33,38 @@
 					</div>
 				</div>
 				<div class="form-group row">
+					<label for="workDir" class="col-sm-2 col-form-label">Working directory:</label>
+					<div class="col-sm-4">
+						<input type="text" id="workDir" name="workDir" class="form-control">
+					</div>
+				</div>
+				<div class="form-group row">
+					<label for="compileCmd" class="col-sm-2 col-form-label">Command to compile:</label>
+					<div class="col-sm-4">
+						<input type="text" id="compileCmd" name="compileCmd" class="form-control">
+					</div>
+					<label for="runCmd" class="col-sm-2 col-form-label">Command to run:</label>
+					<div class="col-sm-4">
+						<input type="text" id="runCmd" name="runCmd" class="form-control">
+					</div>
+
+				</div>
+				<div class="form-group row">
 					<label for="cmd" class="col-sm-2 col-form-label">Command line arguments:</label>
-					<input type="button" value="Add" id="addArg" onclick="appendRow()" class="btn">
+					<div class="col-sm-5">
+						<input type="button" value="Add" id="addArg" onclick="appendRow()" class="btn">
+					</div>
+
 				</div>
 				<div id="cmdArgs">
 				</div>
 				<div class="form-group row">
-					<input type="submit" value="Submit" id="submitForm" class="btn btn-primary">
-					<input type="button" value="Build & Run" class="btn btn-info">
+					<input type="button" value="Submit" id="submitForm" onclick="uploadForm()" class="btn btn-primary">
+					<input type="button" value="Build & Run" id="buildRun" onclick="buildNRun()" class="btn btn-info">
 				</div>
 				<div class="form-group row">
 					<label for="Output" class="col-sm-2 col-form-label">Output:</label><br>
-					<textarea rows="13" name="output" class="form-control" id="output" readonly="true"></textarea>
+					<textarea rows="10" name="output" class="form-control" id="output" readonly="true"></textarea>
 				</div>
 			</form>
 			</div>
