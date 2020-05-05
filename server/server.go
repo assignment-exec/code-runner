@@ -58,36 +58,45 @@ func buildRun(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Build and Run Endpoint Hit")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
+	var outputString string
+	var currDir string
+	var err error
+
+	outputString, currDir = navigateToWorkDir()
+	if outputString == "" {
+		outputString, err = runCommand(AssignmentData.CommandToCompile)
+
+		if err == nil {
+			outputString, err = runCommand(AssignmentData.CommandToExecute)
+		}
+
+		err = os.Chdir(currDir)
+		if err != nil {
+			log.Fatalf("error while navigating to the current directory: %v", err)
+		}
+	}
+
+	response, err := json.Marshal(outputString)
+	if err != nil {
+		log.Println(err)
+	}
+	// Write the response to be sent to client.
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
+func navigateToWorkDir() (string, string) {
+	var responseS = ""
 	workDir := filepath.Join(AssignmentData.RootDir, AssignmentData.WorkDir)
 	currDir, _ := os.Getwd()
 	err := os.Chdir(filepath.Join(currDir, constants.AssignmentsDir, workDir))
 	if err != nil {
-		log.Fatalf("error while navigating to the working directory: %v", err)
+		responseS = "Error while navigating to working directory"
+		log.Println("error while navigating to the working directory: ", err)
 	}
-	var outputString string
-
-	outputString, err = runCommand(AssignmentData.CommandToCompile)
-
-	if err == nil {
-		outputString, err = runCommand(AssignmentData.CommandToExecute)
-	}
-
-	responseS, err := json.Marshal(outputString)
-	if err != nil {
-		log.Println(err)
-	}
-
-	err = os.Chdir(currDir)
-	if err != nil {
-		log.Fatalf("error while navigating to the working directory: %v", err)
-	}
-
-	// Write the response to be sent to client.
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(responseS)
+	return responseS, currDir
 }
-
 func build() {
 
 }
@@ -95,20 +104,23 @@ func build() {
 func run() {
 
 }
+
 // Runs the provided command.
-func runCommand(cmdStr string) (string,error) {
+func runCommand(cmdStr string) (string, error) {
 	var out bytes.Buffer
 	var stderr bytes.Buffer
-
+	var output string
 	cmd := exec.Command("/bin/sh", "-c", cmdStr)
 	cmd.Stdout = &out
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Sprintf("%v", stderr.String()),err
+		output = fmt.Sprintf("%v", stderr.String())
+		return output, err
 	}
 
-	return fmt.Sprintf("%v", out.String()),nil
+	output = fmt.Sprintf("%v", out.String())
+	return output, nil
 }
 
 // Reads the compressed file and invokes function to decompress it.
@@ -160,7 +172,6 @@ func readFormData(r *http.Request) string {
 func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.FileHeader) string {
 	// Based on the type of file compression, read the file.
 
-
 	AssignmentData.RootDir = strings.TrimSuffix(handler.Filename, path.Ext(handler.Filename))
 	if http.DetectContentType(fileHeader) == "application/octet-stream" {
 
@@ -172,7 +183,6 @@ func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.F
 		// For zip file.
 		unZipped, err := zip.NewReader(file, handler.Size)
 		if err != nil {
-
 
 			responseString := `"Unzip Error":"Error in unzipping uploaded file"`
 			log.Println("error in unzipping file", err)
