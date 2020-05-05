@@ -97,13 +97,6 @@ func navigateToWorkDir() (string, string) {
 	}
 	return responseS, currDir
 }
-func build() {
-
-}
-
-func run() {
-
-}
 
 // Runs the provided command.
 func runCommand(cmdStr string) (string, error) {
