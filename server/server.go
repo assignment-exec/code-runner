@@ -67,7 +67,12 @@ func buildRun(w http.ResponseWriter, r *http.Request) {
 		outputString, err = runCommand(AssignmentData.CommandToCompile)
 
 		if err == nil {
-			outputString, err = runCommand(AssignmentData.CommandToExecute)
+			finalCmd := AssignmentData.CommandToExecute
+			for _, value := range AssignmentData.CmdlineArgs {
+				finalCmd = fmt.Sprintf("%s %s", finalCmd, value)
+			}
+			fmt.Println(finalCmd)
+			outputString, err = runCommand(finalCmd)
 		}
 
 		err = os.Chdir(currDir)
@@ -166,13 +171,8 @@ func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.F
 	// Based on the type of file compression, read the file.
 
 	AssignmentData.RootDir = strings.TrimSuffix(handler.Filename, path.Ext(handler.Filename))
-	if http.DetectContentType(fileHeader) == "application/octet-stream" {
+	if http.DetectContentType(fileHeader) == "application/zip" {
 
-		// For tar or tar.gz file.
-		var fileReader io.ReadCloser = file
-		unTarred := tar.NewReader(fileReader)
-		return storeUnTarredFiles(unTarred)
-	} else {
 		// For zip file.
 		unZipped, err := zip.NewReader(file, handler.Size)
 		if err != nil {
@@ -181,8 +181,12 @@ func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.F
 			log.Println("error in unzipping file", err)
 			return responseString
 		}
-
 		return storeUnzippedFiles(unZipped)
+	} else {
+		// For tar or tar.gz file.
+		var fileReader io.ReadCloser = file
+		unTarred := tar.NewReader(fileReader)
+		return storeUnTarredFiles(unTarred)
 	}
 }
 

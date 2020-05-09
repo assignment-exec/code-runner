@@ -1,11 +1,12 @@
 let validation = false;
+let hostUrl = config.hostname + ":" + config.port;
 
 function uploadForm() {
     validateForm();
     if(validation) {
         let formData = new FormData(document.getElementById("mainForm"));
         $.ajax({
-            url: "http://localhost:8082/upload",
+            url: hostUrl + "/upload",
             data: formData,
             processData: false,
             contentType: false,
@@ -28,7 +29,7 @@ function uploadForm() {
 function buildNRun() {
     let formData = new FormData(document.getElementById("mainForm"));
     $.ajax({
-        url: "http://localhost:8082/buildRun",
+        url: hostUrl + "/buildRun",
         data: formData,
         processData: false,
         contentType: false,
@@ -64,12 +65,29 @@ function verifyFiles(fileInput) {
 // Validates the file upload and command line args
 function validateForm() {
   let fileName = document.forms["mainForm"]["file"].value;
+  let compileCmd = document.forms["mainForm"]["compileCmd"].value;
+  let runCmd = document.forms["mainForm"]["runCmd"].value;
+
   if (fileName === "") {
-	let output = document.getElementById("fileError");
+	let output = document.getElementById("formError");
 	output.innerHTML = "Please select a file to upload";
     validation = false;
     return;
   }
+
+    if (compileCmd.trim() === "") {
+        let output = document.getElementById("formError");
+        output.innerHTML = "Command to compile cannot be empty";
+        validation = false;
+        return;
+    }
+
+    if (runCmd.trim() === "") {
+        let output = document.getElementById("formError");
+        output.innerHTML = "Command to run cannot be empty";
+        validation = false;
+        return;
+    }
   validation = true;
 }
 
