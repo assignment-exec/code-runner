@@ -8,3 +8,6 @@ const WorkDirKey = "workDir"
 
 const CmdArgKeyName = "key"
 const CmdArgValueName = "arg"
+
+const ZipMimeFileType = "application/zip"
+const TarGzMimeFileType = "application/x-gzip"
