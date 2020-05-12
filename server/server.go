@@ -5,6 +5,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"coderunner/constants"
+	"coderunner/environment"
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
@@ -31,6 +32,22 @@ type assignmentTestingInformation struct {
 
 var assignTestingInfo assignmentTestingInformation
 
+func getSupportedLanguage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	language := os.Getenv(environment.SupportedLanguage)
+
+	response, err := json.Marshal(language)
+	if err != nil {
+		log.Println(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+
+}
+
 // upload parses the client request and uploads the file.
 func upload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -53,7 +70,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 }
 
 // buildRun builds and runs the assignment uploaded.
-func buildRun(w http.ResponseWriter, r *http.Request) {
+func build(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -66,19 +83,9 @@ func buildRun(w http.ResponseWriter, r *http.Request) {
 	if outputString == "" {
 		// Execute the compile command.
 		outputString, err = runCommand(assignTestingInfo.CommandToCompile)
-
-		if err == nil {
-			// Append the command line arguments to run command.
-			runCmd := assignTestingInfo.CommandToExecute
-			for _, value := range assignTestingInfo.CmdlineArgs {
-				runCmd = fmt.Sprintf("%s %s", runCmd, value)
-			}
-			// Execute the assignment run command.
-			outputString, err = runCommand(runCmd)
-			if err != nil {
-				log.Println("error while executing the assignment", err)
-				outputString = err.Error()
-			}
+		if err != nil {
+			log.Println("error while building the assignment", err)
+			outputString = err.Error()
 		}
 
 		// Navigate back to the code-runner working directory after successful execution.
@@ -88,6 +95,54 @@ func buildRun(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	fmt.Println("Compiled")
+	if err == nil {
+		fmt.Println("success")
+		outputString = "Compiled successfully"
+	}
+	response, err := json.Marshal(outputString)
+	if err != nil {
+		log.Println(err)
+	}
+	// Write the response to be sent to client.
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
+// buildRun builds and runs the assignment uploaded.
+func run(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	var outputString string
+	var currDir string
+	var err error
+
+	// Navigate to the assignment working directory.
+	outputString, currDir = navigateToWorkDir()
+	if outputString == "" {
+
+		// Append the command line arguments to run command.
+		runCmd := assignTestingInfo.CommandToExecute
+		for _, value := range assignTestingInfo.CmdlineArgs {
+			runCmd = fmt.Sprintf("%s %s", runCmd, value)
+		}
+		// Execute the assignment run command.
+		outputString, err = runCommand(runCmd)
+		if err != nil {
+			log.Println("error while executing the assignment", err)
+			outputString = err.Error()
+		}
+
+		// Navigate back to the code-runner working directory after successful execution.
+		err = os.Chdir(currDir)
+		if err != nil {
+			log.Println("error while navigating to the current directory", err)
+		}
+	}
+
+	fmt.Println("Going right", outputString)
 	response, err := json.Marshal(outputString)
 	if err != nil {
 		log.Println(err)
@@ -175,7 +230,7 @@ func readFormData(r *http.Request) string {
 	fmt.Printf("File Size: %+v\n", handler.Size)
 	fmt.Printf("MIME Header: %+v\n", http.DetectContentType(fileHeader))
 
-	// Decompress the the file and return its response.
+	// Decompress the file and return its response.
 	return decompressFile(file, fileHeader, handler)
 }
 
@@ -337,6 +392,7 @@ func listenAndServe(wg *sync.WaitGroup, port string) {
 	defer wg.Done()
 
 	log.Printf("** Service Started on Port " + port + " **")
+	http.Handle("/", http.FileServer(http.Dir("./client")))
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Println(err)
 	}
@@ -347,8 +403,10 @@ func StartServer(port string) {
 
 	var wg sync.WaitGroup
 
+	http.HandleFunc("/getSupportedLanguage", getSupportedLanguage)
 	http.HandleFunc("/upload", upload)
-	http.HandleFunc("/buildRun", buildRun)
+	http.HandleFunc("/build", build)
+	http.HandleFunc("/run", run)
 	wg.Add(1)
 	go listenAndServe(&wg, port)
 	wg.Wait()

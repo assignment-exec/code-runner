@@ -24,6 +24,11 @@
 			<div class="content"> 
 			<form id="mainForm">
 				<div class="form-group row">
+					<span class="col-sm-10 col-form-label" id="note"><small>Note: Enter working directory relative to the assignment root directory. Example - For <b>assignment_1.tar</b> root directory is <b>assignment_1</b>.
+						</small>
+					</span>
+				</div>
+				<div class="form-group row">
 					<label for="assgn" class="col-sm-2 col-form-label">
 						Assignment <span style="color: red">*</span>
 					</label>
@@ -35,16 +40,15 @@
 						<input type="text" id="workDir" name="workDir" class="form-control">
 					</div>
 				</div>
-
 				<div class="form-group row">
 					<label for="compileCmd" class="col-sm-2 col-form-label">
-						Command to compile <span style="color: red">*</span>
+						Command to compile
 					</label>
 					<div class="col-sm-4">
 						<input type="text" id="compileCmd" name="compileCmd" class="form-control">
 					</div>
 					<label for="runCmd" class="col-sm-2 col-form-label">
-						Command to run <span style="color: red">*</span>
+						Command to run
 					</label>
 					<div class="col-sm-4">
 						<input type="text" id="runCmd" name="runCmd" class="form-control">
@@ -62,12 +66,9 @@
 				</div>
 				<div class="form-group row">
 					<input type="button" value="Submit" id="submitForm" onclick="uploadForm()" class="btn btn-primary">
-					<input type="button" value="Build & Run" id="buildRun" onclick="buildNRun()" class="btn btn-info">
+					<input type="button" value="Build" id="build" onclick="buildAssignment()" class="btn btn-info" disabled>
+					<input type="button" value="Run" id="run" onclick="runAssignment()" class="btn btn-info" disabled>
 					<span id="formError" class="text-danger error"></span>
-				</div>
-				<div class="form-group row">
-					<span id="note">Note: Enter working directory relative to the assignment root directory. Example - For <b>assignment_1.tar</b> root directory is <b>assignment_1</b>.
-					</span>
 				</div>
 				<div class="form-group row">
 					<label for="Output" class="col-sm-2 col-form-label">Output:</label><br>
@@ -78,5 +79,6 @@
 		</div>
 	</body>
 	<script type="text/javascript" src="config.js"></script>
+	<script type="text/javascript" src="constants.js"></script>
 	<script type="text/javascript" src="submitAssignment.js"></script>
 </html>

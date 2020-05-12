@@ -1,12 +1,32 @@
-let validation = false;
+let validSubmission = false;
+let validRunCmd = false;
+let validCompileCmd = false;
 let hostUrl = config.hostname + ":" + config.port;
+let supportedLanguage = "";
 
+window.onload = function() {
+    $.ajax({
+        url: hostUrl + getLangHandle,
+        type: 'GET',
+        cache: false,
+        success: function (data) {
+            console.log(data);
+            supportedLanguage = data;
+        },
+        error: function (data) {
+            console.log(data);
+        }
+    });
+};
 function uploadForm() {
-    validateForm();
-    if(validation) {
-        let formData = new FormData(document.getElementById("mainForm"));
+    validateSubmission();
+    if(validSubmission) {
+        let formData = new FormData(document.getElementById(formId));
+        let buildButton = document.getElementById(buildButtonId);
+        let runButton = document.getElementById(runButtonId);
+        buildButton.disabled = true;
         $.ajax({
-            url: hostUrl + "/upload",
+            url: hostUrl + uploadHandle,
             data: formData,
             processData: false,
             contentType: false,
@@ -14,47 +34,90 @@ function uploadForm() {
             cache: false,
             success: function (data) {
                 console.log(data);
-                let output = document.getElementById("output");
+                let output = document.getElementById(outputId);
                 output.innerHTML = data;
+                if(interpretedLanguages.find(x=>x.localeCompare(supportedLanguage) === 0))
+                    runButton.disabled = false;
+                else
+                    buildButton.disabled = false;
+                resetValidations();
             },
             error: function (data) {
                 console.log(data);
-                let output = document.getElementById("output");
+                let output = document.getElementById(outputId);
                 output.innerHTML = data;
             }
         });
     }
 }
 
-function buildNRun() {
-    let formData = new FormData(document.getElementById("mainForm"));
-    $.ajax({
-        url: hostUrl + "/buildRun",
-        data: formData,
-        processData: false,
-        contentType: false,
-        type: 'POST',
-        cache: false,
-        success: function (data) {
-            console.log(data);
-            let output = document.getElementById("output");
-            output.innerHTML = data;
-        },
-        error: function (data) {
-            console.log(data);
-            let output = document.getElementById("output");
-            output.innerHTML = data;
-        }
-    });
+function buildAssignment() {
+    validateCompileCmd();
+    if(validCompileCmd) {
+        let formData = new FormData(document.getElementById(formId));
+        let runButton = document.getElementById(runButtonId);
+        runButton.disabled = true;
+        $.ajax({
+            url: hostUrl + buildHandle,
+            data: formData,
+            processData: false,
+            contentType: false,
+            type: 'POST',
+            cache: false,
+            success: function (data) {
+                console.log(data);
+                let output = document.getElementById(outputId);
+                output.innerHTML = data;
+
+                runButton.disabled = false;
+            },
+            error: function (data) {
+                console.log(data);
+                let output = document.getElementById(outputId);
+                output.innerHTML = data;
+            }
+        });
+    }
 }
+
+function runAssignment() {
+    validateRunCmd();
+    if(validRunCmd) {
+        let formData = new FormData(document.getElementById(formId));
+        $.ajax({
+            url: hostUrl + runHandle,
+            data: formData,
+            processData: false,
+            contentType: false,
+            type: 'POST',
+            cache: false,
+            success: function (data) {
+                console.log(data);
+                let output = document.getElementById(outputId);
+                output.innerHTML = data;
+            },
+            error: function (data) {
+                console.log(data);
+                let output = document.getElementById(outputId);
+                output.innerHTML = data;
+            }
+        });
+    }
+}
+
+function resetValidations() {
+    validSubmission = false;
+    validCompileCmd = false;
+    validRunCmd = false;
+    let formError = document.getElementById(formErrorId);
+    formError.innerHTML = "";
+}
+
 // Verifies the file type (should be .zip, .tar or .tar.gz)
 function verifyFiles(fileInput) {
     let files = fileInput.files;
-    let allowedFiles = ["application/zip", "application/x-tar","application/gzip"];
-    let allowedExtensions = [".zip", ".tar", ".tar.gz"];
-
     let fileType = files[0].type;
-    let output = document.getElementById("fileError");
+    let output = document.getElementById(formErrorId);
 	if (!allowedFiles.includes(fileType)) {
         output.innerHTML = "Please upload files having extensions: " + allowedExtensions.join(', ') + " only.";
         return false;
@@ -63,32 +126,40 @@ function verifyFiles(fileInput) {
     return true;
 }
 // Validates the file upload and command line args
-function validateForm() {
-  let fileName = document.forms["mainForm"]["file"].value;
-  let compileCmd = document.forms["mainForm"]["compileCmd"].value;
-  let runCmd = document.forms["mainForm"]["runCmd"].value;
+function validateSubmission() {
+  let fileName = document.forms[formId][fileId].value;
+
 
   if (fileName === "") {
-	let output = document.getElementById("formError");
+	let output = document.getElementById(formErrorId);
 	output.innerHTML = "Please select a file to upload";
-    validation = false;
+    validSubmission = false;
     return;
   }
+  validSubmission = true;
+}
 
+function validateCompileCmd() {
+    let compileCmd = document.forms[formId][compileCmdId].value;
     if (compileCmd.trim() === "") {
-        let output = document.getElementById("formError");
+        let output = document.getElementById(formErrorId);
         output.innerHTML = "Command to compile cannot be empty";
-        validation = false;
+        validSubmission = false;
         return;
     }
+    validCompileCmd = true;
+}
+// Validates the file upload and command line args
+function validateRunCmd() {
+    let runCmd = document.forms[formId][runCmdId].value;
 
     if (runCmd.trim() === "") {
-        let output = document.getElementById("formError");
+        let output = document.getElementById(formErrorId);
         output.innerHTML = "Command to run cannot be empty";
-        validation = false;
+        validRunCmd = false;
         return;
     }
-  validation = true;
+    validRunCmd = true;
 }
 
 let argCount = 1;
@@ -96,7 +167,7 @@ let argCount = 1;
 // Adds key and argument text boxes on click of "Add" button
 function appendRow()
 {
-   let d = document.getElementById('cmdArgs');
+   let d = document.getElementById(cmdArgsId);
    d.insertAdjacentHTML('beforeend',"<div class='form-group row'>\
    <div class='col-sm-2'>\
    <input type='text' class='form-control' id='key"+ argCount +"' name='key"+ argCount +"'>\
