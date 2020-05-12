@@ -95,9 +95,7 @@ func build(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	fmt.Println("Compiled")
 	if err == nil {
-		fmt.Println("success")
 		outputString = "Compiled successfully"
 	}
 	response, err := json.Marshal(outputString)
@@ -142,7 +140,6 @@ func run(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	fmt.Println("Going right", outputString)
 	response, err := json.Marshal(outputString)
 	if err != nil {
 		log.Println(err)
@@ -277,7 +274,6 @@ func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.F
 func storeUnTarredFiles(unTarred *tar.Reader) string {
 
 	errResponse := `"UnTar Error":"Error in un-tarring uploaded file"`
-	fmt.Println(assignTestingInfo.RootDir)
 	dest := filepath.Join(constants.AssignmentsDir, assignTestingInfo.RootDir)
 	for {
 		header, err := unTarred.Next()
@@ -293,7 +289,6 @@ func storeUnTarredFiles(unTarred *tar.Reader) string {
 		filename := header.Name
 		switch header.Typeflag {
 		case tar.TypeDir:
-			fmt.Println("Dir ", filename)
 			err := os.MkdirAll(filepath.Join(dest, filename), os.FileMode(header.Mode)) // or use 0755 if you prefer
 			if err != nil {
 				log.Println("unTar error: ", err)
@@ -301,7 +296,6 @@ func storeUnTarredFiles(unTarred *tar.Reader) string {
 			}
 
 		case tar.TypeReg:
-			fmt.Println("File ", filename)
 			err := os.MkdirAll(filepath.Join(dest, filepath.Dir(filename)), os.FileMode(header.Mode))
 			writer, err := os.Create(filepath.Join(dest, filename))
 			if err != nil {

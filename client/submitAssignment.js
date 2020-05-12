@@ -4,6 +4,7 @@ let validCompileCmd = false;
 let hostUrl = config.hostname + ":" + config.port;
 let supportedLanguage = "";
 
+// Gets the supported language for current environment from the server.
 window.onload = function() {
     $.ajax({
         url: hostUrl + getLangHandle,
@@ -18,6 +19,8 @@ window.onload = function() {
         }
     });
 };
+
+// Uploads the form data to server.
 function uploadForm() {
     validateSubmission();
     if(validSubmission) {
@@ -51,6 +54,7 @@ function uploadForm() {
     }
 }
 
+// Send the assignment using the given command.
 function buildAssignment() {
     validateCompileCmd();
     if(validCompileCmd) {
@@ -80,6 +84,7 @@ function buildAssignment() {
     }
 }
 
+// Runs the assignment with the given command.
 function runAssignment() {
     validateRunCmd();
     if(validRunCmd) {
@@ -105,6 +110,7 @@ function runAssignment() {
     }
 }
 
+// Resets validation flags.
 function resetValidations() {
     validSubmission = false;
     validCompileCmd = false;
@@ -125,7 +131,7 @@ function verifyFiles(fileInput) {
 	output.innerHTML = "";
     return true;
 }
-// Validates the file upload and command line args
+// Validates the file upload.
 function validateSubmission() {
   let fileName = document.forms[formId][fileId].value;
 
@@ -139,6 +145,7 @@ function validateSubmission() {
   validSubmission = true;
 }
 
+// Validates the compile command.
 function validateCompileCmd() {
     let compileCmd = document.forms[formId][compileCmdId].value;
     if (compileCmd.trim() === "") {
@@ -149,7 +156,8 @@ function validateCompileCmd() {
     }
     validCompileCmd = true;
 }
-// Validates the file upload and command line args
+
+// Validates the run command.
 function validateRunCmd() {
     let runCmd = document.forms[formId][runCmdId].value;
 
