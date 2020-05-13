@@ -1,3 +1,3 @@
 package environment
 
-var SupportedLanguage = "LANGUAGE"
+var SupportedLanguage = "SUPPORTED_LANGUAGE"

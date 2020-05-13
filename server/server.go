@@ -9,6 +9,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"log"
 	"mime/multipart"
@@ -52,10 +53,10 @@ func getSupportedLanguage(w http.ResponseWriter, r *http.Request) {
 func upload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	output := readFormData(r)
-
-	if len(output) <= 0 {
-		output += `"Upload Status":"Successfully Uploaded File(s)"`
+	output := "File uploaded successfully"
+	err := readFormData(r)
+	if err != nil {
+		output = err.Error()
 	}
 
 	response, err := json.Marshal(output)
@@ -69,7 +70,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
-// buildRun builds and runs the assignment uploaded.
+// Builds the assignment uploaded.
 func build(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -78,25 +79,31 @@ func build(w http.ResponseWriter, r *http.Request) {
 	var currDir string
 	var err error
 
+	// Read the command to compile.
+	assignTestingInfo.CommandToCompile = r.FormValue(constants.CompileCmdKey)
+
 	// Navigate to the assignment working directory.
-	outputString, currDir = navigateToWorkDir()
-	if outputString == "" {
+	currDir, err = navigateToWorkDir()
+	if err != nil {
+		outputString = err.Error()
+	} else {
 		// Execute the compile command.
 		outputString, err = runCommand(assignTestingInfo.CommandToCompile)
 		if err != nil {
 			log.Println("error while building the assignment", err)
-			outputString = err.Error()
+			outputString += err.Error()
 		}
 
 		// Navigate back to the code-runner working directory after successful execution.
-		err = os.Chdir(currDir)
-		if err != nil {
-			log.Println("error while navigating to the current directory", err)
+		errChdir := os.Chdir(currDir)
+		if errChdir != nil {
+			log.Println("error while navigating to the current directory", errChdir)
+			outputString += "\nError while navigating to the current directory"
 		}
 	}
 
 	if err == nil {
-		outputString = "Compiled successfully"
+		outputString = fmt.Sprintf("Compiled the assignment successfully \n\n %s", outputString)
 	}
 	response, err := json.Marshal(outputString)
 	if err != nil {
@@ -108,7 +115,7 @@ func build(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
-// buildRun builds and runs the assignment uploaded.
+// Runs the assignment uploaded.
 func run(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -117,26 +124,32 @@ func run(w http.ResponseWriter, r *http.Request) {
 	var currDir string
 	var err error
 
-	// Navigate to the assignment working directory.
-	outputString, currDir = navigateToWorkDir()
-	if outputString == "" {
+	// Read the command to run.
+	assignTestingInfo.CommandToExecute = r.FormValue(constants.RunCmdKey)
 
+	// Navigate to the assignment working directory.
+	currDir, err = navigateToWorkDir()
+	if err != nil {
+		outputString = err.Error()
+	} else {
 		// Append the command line arguments to run command.
 		runCmd := assignTestingInfo.CommandToExecute
-		for _, value := range assignTestingInfo.CmdlineArgs {
-			runCmd = fmt.Sprintf("%s %s", runCmd, value)
+		for key, value := range assignTestingInfo.CmdlineArgs {
+			runCmd = fmt.Sprintf("%s %s %s", runCmd, key, value)
 		}
+		fmt.Println(runCmd)
 		// Execute the assignment run command.
 		outputString, err = runCommand(runCmd)
 		if err != nil {
 			log.Println("error while executing the assignment", err)
-			outputString = err.Error()
+			outputString += err.Error()
 		}
 
 		// Navigate back to the code-runner working directory after successful execution.
-		err = os.Chdir(currDir)
-		if err != nil {
-			log.Println("error while navigating to the current directory", err)
+		errChDir := os.Chdir(currDir)
+		if errChDir != nil {
+			log.Println("error while navigating to the current directory", errChDir)
+			outputString += "\nError while navigating to the current directory"
 		}
 	}
 
@@ -151,19 +164,17 @@ func run(w http.ResponseWriter, r *http.Request) {
 }
 
 // navigateToWorkDir navigates to the provided working directory of the assignment.
-func navigateToWorkDir() (string, string) {
+func navigateToWorkDir() (string, error) {
 	workDir := filepath.Join(assignTestingInfo.RootDir, assignTestingInfo.WorkDir)
 	currDir, err := os.Getwd()
 	if err != nil {
-		log.Println("error while getting current directory", err)
-		return fmt.Sprintf("Error while navigating to working directory"), ""
+		return "", errors.Wrap(err, "error while navigating to the working directory")
 	}
 	err = os.Chdir(filepath.Join(currDir, constants.AssignmentsDir, workDir))
 	if err != nil {
-		log.Println("error while navigating to the working directory: ", err)
-		return fmt.Sprintf("Error while navigating to working directory"), ""
+		return "", errors.Wrap(err, "error while navigating to the working directory")
 	}
-	return "", currDir
+	return currDir, nil
 }
 
 // runCommand runs the provided command.
@@ -185,26 +196,29 @@ func runCommand(cmdStr string) (string, error) {
 }
 
 // readFormData reads the compressed assignment submission and extracts the contents.
-func readFormData(r *http.Request) string {
+func readFormData(r *http.Request) error {
 	fileHeader := make([]byte, 512)
 
 	// Get the first file for the given key 'file'.
 	file, handler, err := r.FormFile(constants.FormFileKey)
 	if err != nil {
-		response := `"File Error":"Error in retrieving the file"`
-		log.Println("error retrieving the file", err)
-		return response
+		return errors.Wrap(err, "error retrieving the file")
 	}
 
 	// Get the command line arguments.
 	assignTestingInfo.CmdlineArgs = make(map[string]string)
-	for index := 1; index <= len(r.Form); index++ {
-		keyName := fmt.Sprintf("%s%d", constants.CmdArgKeyName, index)
+	fmt.Println(r.Form)
+	index := 1
+	keyName := fmt.Sprintf("%s%d", constants.CmdArgKeyName, index)
+	for r.FormValue(keyName) != "" {
 		key := r.FormValue(keyName)
 
 		argName := fmt.Sprintf("%s%d", constants.CmdArgValueName, index)
 		arg := r.FormValue(argName)
+
 		assignTestingInfo.CmdlineArgs[key] = arg
+		index = index + 1
+		keyName = fmt.Sprintf("%s%d", constants.CmdArgKeyName, index)
 	}
 
 	// Read the working directory, command to compile and command to run.
@@ -221,7 +235,7 @@ func readFormData(r *http.Request) string {
 	}()
 
 	if _, err := file.Read(fileHeader); err != nil {
-		log.Println(err)
+		return errors.Wrap(err, "error retrieving the file")
 	}
 
 	fmt.Printf("File Size: %+v\n", handler.Size)
@@ -232,7 +246,7 @@ func readFormData(r *http.Request) string {
 }
 
 // decompressFile reads and stores all files from the uploaded compressed file.
-func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.FileHeader) string {
+func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.FileHeader) error {
 
 	// Read the file based on the type of file compression.
 	assignTestingInfo.RootDir = strings.TrimSuffix(handler.Filename, path.Ext(handler.Filename))
@@ -241,10 +255,7 @@ func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.F
 		// Read zip file.
 		unZipped, err := zip.NewReader(file, handler.Size)
 		if err != nil {
-
-			responseString := `"Unzip Error":"Error in unzipping uploaded file"`
-			log.Println("error in unzipping file", err)
-			return responseString
+			return errors.Wrap(err, "error in unzipping file")
 		}
 		return storeUnzippedFiles(unZipped)
 
@@ -255,9 +266,7 @@ func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.F
 		fileReader, err := handler.Open()
 		gZipReader, err := gzip.NewReader(fileReader)
 		if err != nil {
-			responseString := `"Untar Error":"Error in untaring uploaded file"`
-			log.Println("error in untaring file", err)
-			return responseString
+			return errors.Wrap(err, "error in untaring file")
 		}
 		unTarred := tar.NewReader(gZipReader)
 		return storeUnTarredFiles(unTarred)
@@ -270,10 +279,9 @@ func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.F
 	}
 }
 
-// storeUnTarredFiles stores unTared files to 'assignments' directory.
-func storeUnTarredFiles(unTarred *tar.Reader) string {
+// storeUnTarredFiles stores unTared files to 'assignments/<tarball_name>' directory.
+func storeUnTarredFiles(unTarred *tar.Reader) error {
 
-	errResponse := `"UnTar Error":"Error in un-tarring uploaded file"`
 	dest := filepath.Join(constants.AssignmentsDir, assignTestingInfo.RootDir)
 	for {
 		header, err := unTarred.Next()
@@ -282,88 +290,75 @@ func storeUnTarredFiles(unTarred *tar.Reader) string {
 			break
 		}
 		if err != nil {
-			log.Println("unTar error: ", err)
-			return errResponse
+			return errors.Wrap(err, "error in untaring")
 		}
 
 		filename := header.Name
 		switch header.Typeflag {
 		case tar.TypeDir:
-			err := os.MkdirAll(filepath.Join(dest, filename), os.FileMode(header.Mode)) // or use 0755 if you prefer
+			err := os.MkdirAll(filepath.Join(dest, filename), os.FileMode(header.Mode))
 			if err != nil {
-				log.Println("unTar error: ", err)
-				return errResponse
+				return errors.Wrap(err, "error in untaring")
 			}
 
 		case tar.TypeReg:
 			err := os.MkdirAll(filepath.Join(dest, filepath.Dir(filename)), os.FileMode(header.Mode))
 			writer, err := os.Create(filepath.Join(dest, filename))
 			if err != nil {
-				log.Println("unTar error: ", err)
-				return errResponse
+				return errors.Wrap(err, "error in untaring")
 			}
 
 			_, err = io.Copy(writer, unTarred)
 			if err != nil {
-				log.Println("unTar error: ", err)
-				return errResponse
+				return errors.Wrap(err, "error in untaring")
 			}
 
 			err = os.Chmod(filepath.Join(dest, filename), os.FileMode(header.Mode))
 
 			if err != nil {
-				log.Println("unTar error: ", err)
-				return errResponse
+				return errors.Wrap(err, "error in untaring")
 			}
 
 			writer.Close()
 		default:
-			log.Println("unable to unTar type : ", header.Typeflag)
-			return errResponse
+			return errors.Wrap(err, "error in untaring")
 		}
 	}
-	return ""
+	return nil
 }
 
-// storeUnzippedFiles stores unzipped files to 'assignments' directory.
-func storeUnzippedFiles(unZipped *zip.Reader) string {
+// storeUnzippedFiles stores unzipped files to 'assignments/<tarball_name>' directory.
+func storeUnzippedFiles(unZipped *zip.Reader) error {
 	dest := filepath.Join(constants.AssignmentsDir, assignTestingInfo.RootDir)
-
-	errorResponse := `"Unzip Error":"Error in unzipping uploaded file"`
 
 	for _, file := range unZipped.File {
 		fPath := filepath.Join(dest, file.Name)
 
 		if !strings.HasPrefix(fPath, filepath.Clean(dest)+string(os.PathSeparator)) {
-			log.Println("unzip error: illegal filepath")
-			return errorResponse
+			return errors.New("error in unzipping")
 		}
 
 		if file.FileInfo().IsDir() {
 			err := os.MkdirAll(fPath, os.ModePerm)
 			if err != nil {
-				log.Println("unzip error: ", err)
-				return errorResponse
+				return errors.Wrap(err, "error in unzipping")
 			}
 			continue
 		}
 
 		err := os.MkdirAll(filepath.Dir(fPath), os.ModePerm)
 		if err != nil {
-			log.Println("unzip error: ", err)
-			return errorResponse
+			return errors.Wrap(err, "error in unzipping")
 		}
 
 		outFile, err := os.OpenFile(fPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
 		if err != nil {
-			log.Println("unzip error: ", err)
-			return errorResponse
+			return errors.Wrap(err, "error in unzipping")
 		}
 
 		fileReader, err := file.Open()
 		if err != nil {
-			log.Println("unzip error: ", err)
-			return errorResponse
+			return errors.Wrap(err, "error in unzipping")
 		}
 
 		_, err = io.Copy(outFile, fileReader)
@@ -373,12 +368,11 @@ func storeUnzippedFiles(unZipped *zip.Reader) string {
 		fileReader.Close()
 
 		if err != nil {
-			log.Println("unzip error: ", err)
-			return errorResponse
+			return errors.Wrap(err, "error in unzipping")
 		}
 
 	}
-	return ""
+	return nil
 }
 
 // listenAndServe listens to requests on the given port number.

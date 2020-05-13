@@ -1,4 +1,3 @@
-//const compiledLangs = ["gcc", "gpp", "java"];
 const interpretedLanguages = ["python"];
 const allowedFiles = ["application/zip", "application/x-tar","application/gzip"];
 const allowedExtensions = [".zip", ".tar", ".tar.gz"];

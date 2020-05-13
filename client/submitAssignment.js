@@ -1,13 +1,13 @@
 let validSubmission = false;
 let validRunCmd = false;
 let validCompileCmd = false;
-let hostUrl = config.hostname + ":" + config.port;
 let supportedLanguage = "";
+let cmdArgsEnabled = false;
 
 // Gets the supported language for current environment from the server.
 window.onload = function() {
     $.ajax({
-        url: hostUrl + getLangHandle,
+        url: getLangHandle,
         type: 'GET',
         cache: false,
         success: function (data) {
@@ -29,7 +29,7 @@ function uploadForm() {
         let runButton = document.getElementById(runButtonId);
         buildButton.disabled = true;
         $.ajax({
-            url: hostUrl + uploadHandle,
+            url: uploadHandle,
             data: formData,
             processData: false,
             contentType: false,
@@ -62,7 +62,7 @@ function buildAssignment() {
         let runButton = document.getElementById(runButtonId);
         runButton.disabled = true;
         $.ajax({
-            url: hostUrl + buildHandle,
+            url: buildHandle,
             data: formData,
             processData: false,
             contentType: false,
@@ -72,8 +72,8 @@ function buildAssignment() {
                 console.log(data);
                 let output = document.getElementById(outputId);
                 output.innerHTML = data;
-
                 runButton.disabled = false;
+                resetValidations();
             },
             error: function (data) {
                 console.log(data);
@@ -90,7 +90,7 @@ function runAssignment() {
     if(validRunCmd) {
         let formData = new FormData(document.getElementById(formId));
         $.ajax({
-            url: hostUrl + runHandle,
+            url: runHandle,
             data: formData,
             processData: false,
             contentType: false,
@@ -100,6 +100,7 @@ function runAssignment() {
                 console.log(data);
                 let output = document.getElementById(outputId);
                 output.innerHTML = data;
+                resetValidations();
             },
             error: function (data) {
                 console.log(data);
@@ -116,7 +117,7 @@ function resetValidations() {
     validCompileCmd = false;
     validRunCmd = false;
     let formError = document.getElementById(formErrorId);
-    formError.innerHTML = "";
+    formError.innerHTML = '';
 }
 
 // Verifies the file type (should be .zip, .tar or .tar.gz)
@@ -128,7 +129,7 @@ function verifyFiles(fileInput) {
         output.innerHTML = "Please upload files having extensions: " + allowedExtensions.join(', ') + " only.";
         return false;
     }
-	output.innerHTML = "";
+	output.innerHTML = '';
     return true;
 }
 // Validates the file upload.
@@ -175,7 +176,10 @@ let argCount = 1;
 // Adds key and argument text boxes on click of "Add" button
 function appendRow()
 {
+    cmdArgsEnabled = true;
    let d = document.getElementById(cmdArgsId);
+   let keyName = 'key'+ argCount;
+   let argName = 'arg'+ argCount;
    d.insertAdjacentHTML('beforeend',"<div class='form-group row'>\
    <div class='col-sm-2'>\
    <input type='text' class='form-control' id='key"+ argCount +"' name='key"+ argCount +"'>\

@@ -5,10 +5,10 @@ import (
 	"flag"
 )
 
-var portNumber = flag.String("port", "8082", "Port number for server to listen on")
+var portNumber = flag.String("port", "52453", "Port number for server to listen on")
 
 func init() {
-	flag.StringVar(portNumber, "p", "8082", "Port number for server to listen on")
+	flag.StringVar(portNumber, "p", "52453", "Port number for server to listen on")
 }
 func main() {
 	flag.Parse()
