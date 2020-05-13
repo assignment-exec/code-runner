@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-var portNumber = flag.String("port", "8082", "Port number for server to listen on")
+var portNumber = flag.String("port", "52453", "Port number for server to listen on")
 
 // Creates a new file upload http request with params as cmd arguments.
 func newRequest(uri string, params map[string]string, path string) (*http.Request, error) {
