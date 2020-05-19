@@ -7,6 +7,7 @@ import (
 	"coderunner/constants"
 	"coderunner/environment"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
@@ -16,10 +17,13 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path"
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
+	"time"
 )
 
 type assignmentTestingInformation struct {
@@ -376,12 +380,11 @@ func storeUnzippedFiles(unZipped *zip.Reader) error {
 }
 
 // listenAndServe listens to requests on the given port number.
-func listenAndServe(wg *sync.WaitGroup, port string) {
+func listenAndServe(wg *sync.WaitGroup, server *http.Server) {
 	defer wg.Done()
 
-	log.Printf("** Service Started on Port " + port + " **")
 	http.Handle("/", http.FileServer(http.Dir("./client")))
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		log.Println(err)
 	}
 }
@@ -396,6 +399,21 @@ func StartServer(port string) {
 	http.HandleFunc("/build", build)
 	http.HandleFunc("/run", run)
 	wg.Add(1)
-	go listenAndServe(&wg, port)
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+
+	server := &http.Server{Addr: ":" + port}
+
+	go listenAndServe(&wg, server)
+	log.Printf("** Service Started on Port " + port + " **")
+	<-sig
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer func() {
+		cancel()
+	}()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("Server Shutdown Failed:%+v", err)
+	}
 	wg.Wait()
 }
