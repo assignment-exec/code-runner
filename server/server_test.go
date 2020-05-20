@@ -1,3 +1,5 @@
+// Package server provides primitives for starting an http server and managing different
+// requests to build and run the assignment.
 package server
 
 import (
@@ -16,7 +18,9 @@ import (
 
 var portNumber = flag.String("port", "52453", "Port number for server to listen on")
 
-// Creates a new file upload http request with params as cmd arguments.
+// newRequest creates a new file upload http request. This request constitutes of a tarball file
+// and command line arguments. It returns the instance of created http request and
+// any error encountered.
 func newRequest(uri string, params map[string]string, path string) (*http.Request, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -51,7 +55,8 @@ func newRequest(uri string, params map[string]string, path string) (*http.Reques
 	return req, err
 }
 
-// Sends the constructed request to server.
+// sendRequest sends the newly created file upload request to server.
+// It captures the client response and returns the response and any error encountered.
 func sendRequest(filePath string, port string) (*http.Response, error) {
 	params := map[string]string{
 		"key1": "Key1",
@@ -70,33 +75,39 @@ func sendRequest(filePath string, port string) (*http.Response, error) {
 	return resp, err
 }
 
-// Sends request for a zip file. For testing purpose only.
+// sendZip sends request for a zip file. For testing purpose only.
 func sendZip(port string) (*http.Response, error) {
 	return sendRequest("test-archive_1.zip", port)
 }
 
-// Sends request for a tar file. For testing purpose only.
+// sendTar sends request for a tar file. For testing purpose only.
 func sendTar(port string) (*http.Response, error) {
 	return sendRequest("test-archive_2.tar", port)
 }
 
-// Sends request for a tar.gz file. For testing purpose only.
+// sendTarGz sends request for a tar.gz file. For testing purpose only.
 func sendTarGz(port string) (*http.Response, error) {
 	return sendRequest("test-archive_3.tar.gz", port)
 }
 
+// TestSendZip reads the port number given as a command line arg
+// and invokes function to test a request for zip file.
 func TestSendZip(t *testing.T) {
 	port := *portNumber
 	_, err := sendZip(port)
 	assert.Nil(t, err)
 }
 
+// TestSendTar reads the port number given as a command line arg
+// and invokes function to test a request for tar file.
 func TestSendTar(t *testing.T) {
 	port := *portNumber
 	_, err := sendTar(port)
 	assert.Nil(t, err)
 }
 
+// TestSendTarGz reads the port number given as a command line arg
+// and invokes function to test a request for tar.gz file.
 func TestSendTarGz(t *testing.T) {
 	port := *portNumber
 	_, err := sendTarGz(port)

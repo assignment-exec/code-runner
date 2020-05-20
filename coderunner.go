@@ -12,5 +12,7 @@ func init() {
 }
 func main() {
 	flag.Parse()
+
+	// Start the server on the given port number.
 	server.StartServer(*portNumber)
 }

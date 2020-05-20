@@ -1,3 +1,5 @@
+// Package constants provide list of constant values
+// for the names of form elements and file type.
 package constants
 
 const FormFileKey = "file"
