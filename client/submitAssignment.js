@@ -4,7 +4,11 @@ let validCompileCmd = false;
 let supportedLanguage = "";
 let cmdArgsEnabled = false;
 
-// Gets the supported language for current environment from the server.
+/**
+ * Sends a GET request to the server for getting the supported language for current environment.
+ * This function is invoked on load of the web page.
+ * It stores the supported language, which is required for allowing users to either compile or directly run the assignment.
+ */
 window.onload = function() {
     $.ajax({
         url: getLangHandle,
@@ -20,7 +24,11 @@ window.onload = function() {
     });
 };
 
-// Uploads the form data to server.
+/**
+ * Validates assignment tarball file and sends a POST request to server
+ * for uploading the tarball and other assignment related details.
+ * It logs the success and error status of the operation.
+ */
 function uploadForm() {
     validateSubmission();
     if(validSubmission) {
@@ -39,6 +47,9 @@ function uploadForm() {
                 console.log(data);
                 let output = document.getElementById(outputId);
                 output.innerHTML = data;
+                // Enable 'Run' button if the supported language is one of the interpreted languages.
+                // Else enable 'Build' button for all other languages.
+                // This is done because interpreted languages don't need to be compiled.
                 if(interpretedLanguages.find(x=>x.localeCompare(supportedLanguage) === 0))
                     runButton.disabled = false;
                 else
@@ -54,7 +65,11 @@ function uploadForm() {
     }
 }
 
-// Send the assignment using the given command.
+/**
+ * Validates the command to compile and sends POST request to server
+ * to build or compile the uploaded assignment. It logs and displays the response
+ * from server(i.e output of compilation) and also logs any error encountered.
+ */
 function buildAssignment() {
     validateCompileCmd();
     if(validCompileCmd) {
@@ -72,6 +87,7 @@ function buildAssignment() {
                 console.log(data);
                 let output = document.getElementById(outputId);
                 output.innerHTML = data;
+                // Enable the 'Run' button after successful compilation.
                 runButton.disabled = false;
                 resetValidations();
             },
@@ -84,7 +100,11 @@ function buildAssignment() {
     }
 }
 
-// Runs the assignment with the given command.
+/**
+ * Validates the command to run and sends POST request to server
+ * to execute or run the uploaded assignment. It logs and displays the response
+ * from server(i.e output of execution) and also logs any error encountered.
+ */
 function runAssignment() {
     validateRunCmd();
     if(validRunCmd) {
@@ -100,6 +120,7 @@ function runAssignment() {
                 console.log(data);
                 let output = document.getElementById(outputId);
                 output.innerHTML = data;
+                // Reset all validation flags after successful execution.
                 resetValidations();
             },
             error: function (data) {
@@ -111,7 +132,9 @@ function runAssignment() {
     }
 }
 
-// Resets validation flags.
+/**
+ * Resets all validation flags and clears the 'formError' element.
+ */
 function resetValidations() {
     validSubmission = false;
     validCompileCmd = false;
@@ -120,7 +143,13 @@ function resetValidations() {
     formError.innerHTML = '';
 }
 
-// Verifies the file type (should be .zip, .tar or .tar.gz)
+/**
+ * Verifies the selected file input for valid file types and extensions.
+ * Allowed file types are 'application/zip', 'application/x-tar','application/gzip'.
+ * Displays error in 'formError' HTML element if a file is not selected within allowed types.
+ * @param fileInput - The selected file to upload
+ * @returns {boolean} - A boolean flag indicating whether correct file is uploaded.
+ */
 function verifyFiles(fileInput) {
     let files = fileInput.files;
     let fileType = files[0].type;
@@ -132,10 +161,13 @@ function verifyFiles(fileInput) {
 	output.innerHTML = '';
     return true;
 }
-// Validates the file upload.
+
+/**
+ * Validates file selection. Displays error message in 'formError'
+ * HTML element if a file is not selected.
+ */
 function validateSubmission() {
   let fileName = document.forms[formId][fileId].value;
-
 
   if (fileName === "") {
 	let output = document.getElementById(formErrorId);
@@ -146,7 +178,10 @@ function validateSubmission() {
   validSubmission = true;
 }
 
-// Validates the compile command.
+/**
+ * Validates command to compile. Displays error message in 'formError'
+ * HTML element if command to compile is empty.
+ */
 function validateCompileCmd() {
     let compileCmd = document.forms[formId][compileCmdId].value;
     if (compileCmd.trim() === "") {
@@ -158,7 +193,10 @@ function validateCompileCmd() {
     validCompileCmd = true;
 }
 
-// Validates the run command.
+/**
+ * Validates command to run. Displays error message in 'formError'
+ * HTML element if command to run is empty.
+ */
 function validateRunCmd() {
     let runCmd = document.forms[formId][runCmdId].value;
 
@@ -173,7 +211,10 @@ function validateRunCmd() {
 
 let argCount = 1;
 
-// Adds key and argument text boxes on click of "Add" button
+/**
+ * Appends a new div element with two text boxes to the 'cmdArgs' HTML element
+ * on click of 'Add' button. The text boxes are for adding command line arguments in key-value form.
+ */
 function appendRow()
 {
     cmdArgsEnabled = true;

@@ -1,3 +1,7 @@
+/*
+Constants for interpreted languages, allowed file types,
+server endpoints and all HTML element Ids.
+ */
 const interpretedLanguages = ["python"];
 const allowedFiles = ["application/zip", "application/x-tar","application/gzip"];
 const allowedExtensions = [".zip", ".tar", ".tar.gz"];

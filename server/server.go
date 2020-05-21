@@ -1,3 +1,5 @@
+// Package server provides primitives for starting an http server and managing different
+// requests to build and run the assignment.
 package server
 
 import (
@@ -33,8 +35,9 @@ type assignmentTestingInformation struct {
 
 var assignTestingInfo assignmentTestingInformation
 
-// getSupportedLanguage reads the supported language from environment variable.
-// It sends the supported language as a response to the requester.
+// getSupportedLanguage reads the supported language for current execution environment
+// from the environment variable  'SUPPORTED_LANGUAGE'.
+// It sends the read information as a response to the requester.
 func getSupportedLanguage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -257,6 +260,7 @@ func readFormData(r *http.Request) error {
 }
 
 // decompressFile decompresses the assignment tarball based on the type of compression.
+// The allowed file compression types are zip, tar and tar.gz.
 // It stores the extracted files to `assignments` directory and returns any error encountered.
 func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.FileHeader) error {
 
@@ -292,6 +296,7 @@ func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.F
 }
 
 // storeUnTarredFiles stores unTared files to 'assignments/<tarball_name>' directory.
+// It returns any error encountered.
 func storeUnTarredFiles(unTarred *tar.Reader) error {
 
 	dest := filepath.Join(constants.AssignmentsDir, assignTestingInfo.RootDir)
@@ -340,6 +345,7 @@ func storeUnTarredFiles(unTarred *tar.Reader) error {
 }
 
 // storeUnzippedFiles stores unzipped files to 'assignments/<tarball_name>' directory.
+// It returns any error encountered.
 func storeUnzippedFiles(unZipped *zip.Reader) error {
 	dest := filepath.Join(constants.AssignmentsDir, assignTestingInfo.RootDir)
 
@@ -387,7 +393,7 @@ func storeUnzippedFiles(unZipped *zip.Reader) error {
 	return nil
 }
 
-// listenAndServe listens to requests on the given port number.
+// listenAndServe starts an http server to listen to requests on the given port number.
 func listenAndServe(wg *sync.WaitGroup, port string) {
 	defer wg.Done()
 
@@ -398,7 +404,8 @@ func listenAndServe(wg *sync.WaitGroup, port string) {
 	}
 }
 
-// StartServer starts service at given port.
+// StartServer invokes functions to start http server at given port.
+// It also creates http end points for different functionality to serve user requests.
 func StartServer(port string) {
 
 	var wg sync.WaitGroup
