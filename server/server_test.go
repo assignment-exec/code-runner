@@ -1,3 +1,5 @@
+// Package server provides primitives for starting an http server and managing different
+// requests to build and run the assignment.
 package server
 
 import (
