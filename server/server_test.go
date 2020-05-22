@@ -89,7 +89,7 @@ func sendTarGz(port string) (*http.Response, error) {
 }
 
 // TestSendZip reads the port number given as a command line arg
-// and invokes function to send a request for zip file.
+// and invokes function to test a request for zip file.
 func TestSendZip(t *testing.T) {
 	port := *portNumber
 	_, err := sendZip(port)
@@ -97,7 +97,7 @@ func TestSendZip(t *testing.T) {
 }
 
 // TestSendTar reads the port number given as a command line arg
-// and invokes function to send a request for tar file.
+// and invokes function to test a request for tar file.
 func TestSendTar(t *testing.T) {
 	port := *portNumber
 	_, err := sendTar(port)
@@ -105,7 +105,7 @@ func TestSendTar(t *testing.T) {
 }
 
 // TestSendTarGz reads the port number given as a command line arg
-// and invokes function to send a request for tar.gz file.
+// and invokes function to test a request for tar.gz file.
 func TestSendTarGz(t *testing.T) {
 	port := *portNumber
 	_, err := sendTarGz(port)
