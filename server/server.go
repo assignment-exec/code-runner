@@ -94,7 +94,7 @@ func build(w http.ResponseWriter, r *http.Request) {
 			outputString += err.Error()
 		}
 
-		// Navigate back to the code-runner working directory after successful execution.
+		// Navigate back to the code-runner current directory after successful execution.
 		chdirErr := os.Chdir(currDir)
 		if chdirErr != nil {
 			log.Println("error while navigating to the current directory", chdirErr)
