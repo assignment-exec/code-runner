@@ -9,6 +9,7 @@ import (
 	"coderunner/constants"
 	"coderunner/environment"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
@@ -18,19 +19,22 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path"
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
+	"time"
 )
 
 type assignmentTestingInformation struct {
-	CommandToExecute string
-	CommandToCompile string
-	WorkDir          string
-	RootDir          string
-	Output           string
-	CmdlineArgs      map[string]string
+	ExecuteCommand string
+	CompileCommand string
+	WorkDir        string
+	RootDir        string
+	Output         string
+	CmdlineArgs    map[string]string
 }
 
 var assignTestingInfo assignmentTestingInformation
@@ -41,9 +45,9 @@ var assignTestingInfo assignmentTestingInformation
 func getSupportedLanguage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	language := os.Getenv(environment.SupportedLanguage)
+	supportedLang := os.Getenv(environment.SupportedLanguage)
 
-	response, err := json.Marshal(language)
+	response, err := json.Marshal(supportedLang)
 	if err != nil {
 		log.Println(err)
 	}
@@ -89,7 +93,7 @@ func build(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	// Read the command to compile.
-	assignTestingInfo.CommandToCompile = r.FormValue(constants.CompileCmdKey)
+	assignTestingInfo.CompileCommand = r.FormValue(constants.CompileCmdKey)
 
 	// Navigate to the assignment working directory.
 	currDir, err = navigateToWorkDir()
@@ -97,16 +101,16 @@ func build(w http.ResponseWriter, r *http.Request) {
 		outputString = err.Error()
 	} else {
 		// Execute the compile command.
-		outputString, err = runCommand(assignTestingInfo.CommandToCompile)
+		outputString, err = runCommand(assignTestingInfo.CompileCommand)
 		if err != nil {
 			log.Println("error while building the assignment", err)
 			outputString += err.Error()
 		}
 
-		// Navigate back to the code-runner working directory after successful execution.
-		errChdir := os.Chdir(currDir)
-		if errChdir != nil {
-			log.Println("error while navigating to the current directory", errChdir)
+		// Navigate back to the code-runner current directory after successful execution.
+		chdirErr := os.Chdir(currDir)
+		if chdirErr != nil {
+			log.Println("error while navigating to the current directory", chdirErr)
 			outputString += "\nError while navigating to the current directory"
 		}
 	}
@@ -135,7 +139,7 @@ func run(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	// Read the command to run.
-	assignTestingInfo.CommandToExecute = r.FormValue(constants.RunCmdKey)
+	assignTestingInfo.ExecuteCommand = r.FormValue(constants.RunCmdKey)
 
 	// Navigate to the assignment working directory.
 	currDir, err = navigateToWorkDir()
@@ -143,11 +147,10 @@ func run(w http.ResponseWriter, r *http.Request) {
 		outputString = err.Error()
 	} else {
 		// Append the command line arguments to run command.
-		runCmd := assignTestingInfo.CommandToExecute
+		runCmd := assignTestingInfo.ExecuteCommand
 		for key, value := range assignTestingInfo.CmdlineArgs {
 			runCmd = fmt.Sprintf("%s %s %s", runCmd, key, value)
 		}
-		fmt.Println(runCmd)
 		// Execute the assignment run command.
 		outputString, err = runCommand(runCmd)
 		if err != nil {
@@ -156,9 +159,9 @@ func run(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Navigate back to the code-runner working directory after successful execution.
-		errChDir := os.Chdir(currDir)
-		if errChDir != nil {
-			log.Println("error while navigating to the current directory", errChDir)
+		chdirErr := os.Chdir(currDir)
+		if chdirErr != nil {
+			log.Println("error while navigating to the current directory", chdirErr)
 			outputString += "\nError while navigating to the current directory"
 		}
 	}
@@ -221,7 +224,6 @@ func readFormData(r *http.Request) error {
 
 	// Get the command line arguments.
 	assignTestingInfo.CmdlineArgs = make(map[string]string)
-	fmt.Println(r.Form)
 	index := 1
 	keyName := fmt.Sprintf("%s%d", constants.CmdArgKeyName, index)
 	for r.FormValue(keyName) != "" {
@@ -231,13 +233,13 @@ func readFormData(r *http.Request) error {
 		arg := r.FormValue(argName)
 
 		assignTestingInfo.CmdlineArgs[key] = arg
-		index = index + 1
+		index++
 		keyName = fmt.Sprintf("%s%d", constants.CmdArgKeyName, index)
 	}
 
 	// Read the working directory, command to compile and command to run.
-	assignTestingInfo.CommandToCompile = r.FormValue(constants.CompileCmdKey)
-	assignTestingInfo.CommandToExecute = r.FormValue(constants.RunCmdKey)
+	assignTestingInfo.CompileCommand = r.FormValue(constants.CompileCmdKey)
+	assignTestingInfo.ExecuteCommand = r.FormValue(constants.RunCmdKey)
 	assignTestingInfo.WorkDir = r.FormValue(constants.WorkDirKey)
 
 	defer func() {
@@ -298,7 +300,7 @@ func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.F
 // It returns any error encountered.
 func storeUnTarredFiles(unTarred *tar.Reader) error {
 
-	dest := filepath.Join(constants.AssignmentsDir, assignTestingInfo.RootDir)
+	destPath := filepath.Join(constants.AssignmentsDir, assignTestingInfo.RootDir)
 	for {
 		header, err := unTarred.Next()
 		if err == io.EOF {
@@ -312,14 +314,14 @@ func storeUnTarredFiles(unTarred *tar.Reader) error {
 		filename := header.Name
 		switch header.Typeflag {
 		case tar.TypeDir:
-			err := os.MkdirAll(filepath.Join(dest, filename), os.FileMode(header.Mode))
+			err := os.MkdirAll(filepath.Join(destPath, filename), os.FileMode(header.Mode))
 			if err != nil {
 				return errors.Wrap(err, "error in untaring")
 			}
 
 		case tar.TypeReg:
-			err := os.MkdirAll(filepath.Join(dest, filepath.Dir(filename)), os.FileMode(header.Mode))
-			writer, err := os.Create(filepath.Join(dest, filename))
+			err := os.MkdirAll(filepath.Join(destPath, filepath.Dir(filename)), os.FileMode(header.Mode))
+			writer, err := os.Create(filepath.Join(destPath, filename))
 			if err != nil {
 				return errors.Wrap(err, "error in untaring")
 			}
@@ -329,7 +331,7 @@ func storeUnTarredFiles(unTarred *tar.Reader) error {
 				return errors.Wrap(err, "error in untaring")
 			}
 
-			err = os.Chmod(filepath.Join(dest, filename), os.FileMode(header.Mode))
+			err = os.Chmod(filepath.Join(destPath, filename), os.FileMode(header.Mode))
 
 			if err != nil {
 				return errors.Wrap(err, "error in untaring")
@@ -346,12 +348,12 @@ func storeUnTarredFiles(unTarred *tar.Reader) error {
 // storeUnzippedFiles stores unzipped files to 'assignments/<tarball_name>' directory.
 // It returns any error encountered.
 func storeUnzippedFiles(unZipped *zip.Reader) error {
-	dest := filepath.Join(constants.AssignmentsDir, assignTestingInfo.RootDir)
+	destPath := filepath.Join(constants.AssignmentsDir, assignTestingInfo.RootDir)
 
 	for _, file := range unZipped.File {
-		fPath := filepath.Join(dest, file.Name)
+		fPath := filepath.Join(destPath, file.Name)
 
-		if !strings.HasPrefix(fPath, filepath.Clean(dest)+string(os.PathSeparator)) {
+		if !strings.HasPrefix(fPath, filepath.Clean(destPath)+string(os.PathSeparator)) {
 			return errors.New("error in unzipping")
 		}
 
@@ -393,12 +395,11 @@ func storeUnzippedFiles(unZipped *zip.Reader) error {
 }
 
 // listenAndServe starts an http server to listen to requests on the given port number.
-func listenAndServe(wg *sync.WaitGroup, port string) {
+func listenAndServe(wg *sync.WaitGroup, server *http.Server) {
 	defer wg.Done()
 
-	log.Printf("** Service Started on Port " + port + " **")
 	http.Handle("/", http.FileServer(http.Dir("./client")))
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		log.Println(err)
 	}
 }
@@ -414,6 +415,21 @@ func StartServer(port string) {
 	http.HandleFunc("/build", build)
 	http.HandleFunc("/run", run)
 	wg.Add(1)
-	go listenAndServe(&wg, port)
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+
+	server := &http.Server{Addr: ":" + port}
+
+	go listenAndServe(&wg, server)
+	log.Printf("** Service Started on Port " + port + " **")
+	<-sig
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer func() {
+		cancel()
+	}()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("Server Shutdown Failed:%+v", err)
+	}
 	wg.Wait()
 }

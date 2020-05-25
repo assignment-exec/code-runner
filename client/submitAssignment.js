@@ -1,8 +1,9 @@
-let validSubmission = false;
-let validRunCmd = false;
-let validCompileCmd = false;
+let isValidSubmission = false;
+let isValidRunCmd = false;
+let isValidCompileCmd = false;
 let supportedLanguage = "";
-let cmdArgsEnabled = false;
+let isCmdArgsEnabled = false;
+let cmdArgsCount = 1;
 
 /**
  * Sends a GET request to the server for getting the supported language for current environment.
@@ -30,7 +31,7 @@ window.onload = function() {
  */
 function uploadForm() {
     validateSubmission();
-    if(validSubmission) {
+    if(isValidSubmission) {
         let formData = new FormData(document.getElementById(formId));
         let buildButton = document.getElementById(buildButtonId);
         let runButton = document.getElementById(runButtonId);
@@ -71,7 +72,7 @@ function uploadForm() {
  */
 function buildAssignment() {
     validateCompileCmd();
-    if(validCompileCmd) {
+    if(isValidCompileCmd) {
         let formData = new FormData(document.getElementById(formId));
         let runButton = document.getElementById(runButtonId);
         runButton.disabled = true;
@@ -106,7 +107,7 @@ function buildAssignment() {
  */
 function runAssignment() {
     validateRunCmd();
-    if(validRunCmd) {
+    if(isValidRunCmd) {
         let formData = new FormData(document.getElementById(formId));
         $.ajax({
             url: runHandle,
@@ -135,9 +136,9 @@ function runAssignment() {
  * Resets all validation flags and clears the 'formError' element.
  */
 function resetValidations() {
-    validSubmission = false;
-    validCompileCmd = false;
-    validRunCmd = false;
+    isValidSubmission = false;
+    isValidCompileCmd = false;
+    isValidRunCmd = false;
     let formError = document.getElementById(formErrorId);
     formError.innerHTML = '';
 }
@@ -151,12 +152,12 @@ function resetValidations() {
 function verifyFiles(fileInput) {
     let files = fileInput.files;
     let fileType = files[0].type;
-    let output = document.getElementById(formErrorId);
+    let formError = document.getElementById(formErrorId);
 	if (!allowedFiles.includes(fileType)) {
-        output.innerHTML = "Please upload files having extensions: " + allowedExtensions.join(', ') + " only.";
+        formError.innerHTML = "Please upload files having extensions: " + allowedExtensions.join(', ') + " only.";
         return false;
     }
-	output.innerHTML = '';
+	formError.innerHTML = '';
     return true;
 }
 
@@ -167,12 +168,12 @@ function validateSubmission() {
   let fileName = document.forms[formId][fileId].value;
 
   if (fileName === "") {
-	let output = document.getElementById(formErrorId);
-	output.innerHTML = "Please select a file to upload";
-    validSubmission = false;
+	let formError = document.getElementById(formErrorId);
+	formError.innerHTML = "Please select a file to upload";
+    isValidSubmission = false;
     return;
   }
-  validSubmission = true;
+  isValidSubmission = true;
 }
 
 /**
@@ -183,10 +184,10 @@ function validateCompileCmd() {
     if (compileCmd.trim() === "") {
         let output = document.getElementById(formErrorId);
         output.innerHTML = "Command to compile cannot be empty";
-        validSubmission = false;
+        isValidSubmission = false;
         return;
     }
-    validCompileCmd = true;
+    isValidCompileCmd = true;
 }
 
 /**
@@ -196,12 +197,12 @@ function validateRunCmd() {
     let runCmd = document.forms[formId][runCmdId].value;
 
     if (runCmd.trim() === "") {
-        let output = document.getElementById(formErrorId);
-        output.innerHTML = "Command to run cannot be empty";
-        validRunCmd = false;
+        let formError = document.getElementById(formErrorId);
+        formError.innerHTML = "Command to run cannot be empty";
+        isValidRunCmd = false;
         return;
     }
-    validRunCmd = true;
+    isValidRunCmd = true;
 }
 
 let argCount = 1;
@@ -211,16 +212,14 @@ let argCount = 1;
  */
 function appendRow()
 {
-    cmdArgsEnabled = true;
-   let d = document.getElementById(cmdArgsId);
-   let keyName = 'key'+ argCount;
-   let argName = 'arg'+ argCount;
-   d.insertAdjacentHTML('beforeend',"<div class='form-group row'>\
+    isCmdArgsEnabled = true;
+   let cmdArgs = document.getElementById(cmdArgsId);
+   cmdArgs.insertAdjacentHTML('beforeend',"<div class='form-group row'>\
    <div class='col-sm-2'>\
-   <input type='text' class='form-control' id='key"+ argCount +"' name='key"+ argCount +"'>\
+   <input type='text' class='form-control' id='key"+ cmdArgsCount +"' name='key"+ cmdArgsCount +"'>\
    </div>\
    <div class='col-sm-2'>\
-   <input type='text' class='form-control' id='arg"+ argCount +"' name='arg"+ argCount++ +"'>\
+   <input type='text' class='form-control' id='arg"+ cmdArgsCount +"' name='arg"+ cmdArgsCount++ +"'>\
    </div>\
    </div>");
 }
