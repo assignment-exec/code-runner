@@ -58,10 +58,9 @@ func getSupportedLanguage(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// upload parses the client request, reads and stores the form data.
-// It uploads the assignment tarball, stores the commands to compile and run.
-// It also stores the working directory and command line arguments to run the assignment.
-// It sends the status of every operation as response to the client.
+// upload parses the client request, invokes function to read and
+// store all the form data.
+// It sends the status of operation as response to the client.
 func upload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
