@@ -1,6 +1,6 @@
-/*
-Constants for interpreted languages, allowed file types,
-server endpoints and all HTML element Ids.
+/**
+* Constants for interpreted languages, allowed file types,
+* server endpoints and all HTML element Ids.
  */
 
 // Supported interpreted languages.

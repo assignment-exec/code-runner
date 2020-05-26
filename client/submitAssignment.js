@@ -27,7 +27,6 @@ window.onload = function() {
 
 /**
  * Validates assignment tarball file and sends a POST request to server.
- * It logs the success and error status of the operation.
  */
 function uploadForm() {
     validateSubmission();
@@ -67,8 +66,6 @@ function uploadForm() {
 
 /**
  * Validates the command to compile and sends POST request to server.
- * It logs and displays the response from server and also logs any
- * error encountered.
  */
 function buildAssignment() {
     validateCompileCmd();
@@ -102,8 +99,6 @@ function buildAssignment() {
 
 /**
  * Validates the command to run and sends POST request to server.
- * It logs and displays the response from serve and also logs
- * any error encountered.
  */
 function runAssignment() {
     validateRunCmd();
