@@ -55,7 +55,7 @@ Submit your assignment through the web page as shown in the figure above.
 - Initially `Build` and `Run` buttons are disabled. Submit the assignment details to enable them.
 - Choose the assignment tar ball.
 - Enter commands to compile and run the code.
-- Enter working directory to run the commands. If not provided then commands will be run at the root assignment directory.
+- Enter working directory to run the commands. If not provided then commands will be run at the assignment root directory.
 - Add command line arguments if required to run the assignment using `Add` button.
 - Click on `Submit` button to upload the details to the server.
 - The status of upload will be displayed in the `Output` section.
