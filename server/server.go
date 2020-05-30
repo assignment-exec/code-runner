@@ -1,3 +1,5 @@
+// Package server implements routines for starting an http server and managing different
+// requests to build and run the assignment.
 package server
 
 import (
@@ -37,6 +39,9 @@ type assignmentTestingInformation struct {
 
 var assignTestingInfo assignmentTestingInformation
 
+// getSupportedLanguage reads the supported language for current execution environment
+// from the environment variable  'SUPPORTED_LANGUAGE'.
+// It sends the read information as a response to the requester.
 func getSupportedLanguage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -53,7 +58,9 @@ func getSupportedLanguage(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// upload parses the client request and uploads the file.
+// upload parses the client request, invokes function to read and
+// store all the form data.
+// It sends the status of operation as response to the client.
 func upload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -74,7 +81,8 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
-// Builds the assignment uploaded.
+// build compiles the uploaded assignment by using the command to compile
+// It sends the compilation status or message as a response to the client.
 func build(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -119,7 +127,8 @@ func build(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
-// Runs the assignment uploaded.
+// run executes the compiled assignment by using the command to execute.
+// It sends the output after executing the assignment as a response to the client.
 func run(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -167,6 +176,7 @@ func run(w http.ResponseWriter, r *http.Request) {
 }
 
 // navigateToWorkDir navigates to the provided working directory of the assignment.
+// It returns the current directory name (prior to navigating to working directory) and any error encountered.
 func navigateToWorkDir() (string, error) {
 	workDir := filepath.Join(assignTestingInfo.RootDir, assignTestingInfo.WorkDir)
 	currDir, err := os.Getwd()
@@ -181,6 +191,7 @@ func navigateToWorkDir() (string, error) {
 }
 
 // runCommand runs the provided command.
+// It returns output of the command as a string and any error encountered.
 func runCommand(cmdStr string) (string, error) {
 	var out bytes.Buffer
 	var stderr bytes.Buffer
@@ -198,7 +209,9 @@ func runCommand(cmdStr string) (string, error) {
 	return output, nil
 }
 
-// readFormData reads the compressed assignment submission and extracts the contents.
+// readFormData reads all the form fields and stores them.
+// It reads the assignment tarball, commands to compile and run, working directory and command line args.
+// It returns any error encountered.
 func readFormData(r *http.Request) error {
 	fileHeader := make([]byte, 512)
 
@@ -247,7 +260,8 @@ func readFormData(r *http.Request) error {
 	return decompressFile(file, fileHeader, handler)
 }
 
-// decompressFile reads and stores all files from the uploaded compressed file.
+// decompressFile decompresses the assignment tarball based on the type of compression.
+// It stores the extracted files to `assignments` directory and returns any error encountered.
 func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.FileHeader) error {
 
 	// Read the file based on the type of file compression.
@@ -282,6 +296,7 @@ func decompressFile(file multipart.File, fileHeader []byte, handler *multipart.F
 }
 
 // storeUnTarredFiles stores unTared files to 'assignments/<tarball_name>' directory.
+// It returns any error encountered.
 func storeUnTarredFiles(unTarred *tar.Reader) error {
 
 	destPath := filepath.Join(constants.AssignmentsDir, assignTestingInfo.RootDir)
@@ -330,6 +345,7 @@ func storeUnTarredFiles(unTarred *tar.Reader) error {
 }
 
 // storeUnzippedFiles stores unzipped files to 'assignments/<tarball_name>' directory.
+// It returns any error encountered.
 func storeUnzippedFiles(unZipped *zip.Reader) error {
 	destPath := filepath.Join(constants.AssignmentsDir, assignTestingInfo.RootDir)
 
@@ -377,7 +393,7 @@ func storeUnzippedFiles(unZipped *zip.Reader) error {
 	return nil
 }
 
-// listenAndServe listens to requests on the given port number.
+// listenAndServe starts an http server to listen to requests on the given port number.
 func listenAndServe(wg *sync.WaitGroup, server *http.Server) {
 	defer wg.Done()
 
@@ -387,7 +403,8 @@ func listenAndServe(wg *sync.WaitGroup, server *http.Server) {
 	}
 }
 
-// StartServer starts service at given port.
+// StartServer sets up the different http endpoints to be used by the client
+// and starts the http server at the given port.
 func StartServer(port string) {
 
 	var wg sync.WaitGroup

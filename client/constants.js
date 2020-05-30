@@ -1,5 +1,13 @@
+/**
+* Constants for interpreted languages, allowed file types,
+* server endpoints and all HTML element Ids.
+ */
+
+// Supported interpreted languages.
 const interpretedLanguages = ["python"];
+// Allowed submission file types.
 const allowedFiles = ["application/zip", "application/x-tar","application/gzip"];
+// Allowed submission file extensions.
 const allowedExtensions = [".zip", ".tar", ".tar.gz"];
 
 const formId = "mainForm";
