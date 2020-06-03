@@ -46,7 +46,7 @@ Below is the list of supported languages and the corresponding versions.
 - java 8 & 11
 
 ## Web page to Submit Assignment
-Use the exposed port number to open the web page. Example - for exposed port number as 52453, hit `http://localhost:52453` on browser.
+Use the exposed port number to open the web page. Example - for exposed port number as 52453, hit [http://localhost:52453](https://htmlpreview.github.io/?https://github.com/assignment-exec/code-runner/blob/master/client/index.html) on browser.
 
 ![](docs/webPage.png)
 
