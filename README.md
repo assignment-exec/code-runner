@@ -3,21 +3,18 @@ Code Runner: A tool to help run your assignments
 Code Runner is a web application to run code pertaining to your assignment using user provided configurations.
 
 ## Features
-There are two roles in the application - Professor and Student.
-#### Professor
-- Professor provides course specific configurations for creating suitable docker environment.
-- Course specific configurations include specifying operating system and its version, programming language and compiler.
-#### Student
 - Students can submit their assignments and view the output through a web page.
-- They can also enter the optional command line arguments that are required to run their assignment.
-- Web page accepts assignment files in compressed format. Allowed formats are .zip, .tar and .tar.gz.
+- Below is the list of details that can be provided by students.
+  - Assignment tarball - Web page accepts assignment files in compressed format. Allowed formats are .zip, .tar and .tar.gz.
+  - Assignment working directory - Path within the assignment directory where the commands should be run. The path should be relative to the assignment root directory.
+  - Commands to compile and run.
+  - Command line arguments - These are optional, provide only if required to run the assignment.
       
-Currently the application supports only server features:  
-- Run the server
-- Accept assignment files and command line argument
-- Extract the files send status response to web page.
+Currently the application supports following server features:  
+- Accept assignment tarball, working directory, commands to compile and run, and command line arguments.
+- Extract the files, compile and run the assignment and send the respective outputs to web page.
 
-## Build and Run Server
+## Build and Run Server on local machine
 Compile the source code using the `make` tool as shown below.
 ```commandline
 make
@@ -30,22 +27,45 @@ Use the `-port` option to specify the port number for the server to listen reque
 ./code-runner-server -port <port>
 ```
 
-## Send code files and arguments to server
-Use curl command to connect to the server and send request.
-Use multipart/form data option(-F) to provide the assignment submission file and the command-line arguments that are to be used when executing the code.
+## Run Code Runner inside a Docker Container
+- Prerequisite for this is that docker engine should be installed.
+- See [instructions](https://docs.docker.com/engine/installation/) for installing docker engine on different supported platforms.
+- A docker image of code runner is used as a base image for different assignment environment images.
+- Code Runner base image is not directly used, instead the image pertaining to the required assignment environment should be used to run the assignments.
+
+Use the following docker command to run the required assignment environment image.
 ```commandline
-curl <server_ip_address:port_number> -F <compressed_filepath> -F <arg1> -F <arg2> ...
+docker run --publish <port_to_expose>:<port_to_run> <image_tag> -port <port_to_run>
 ```
 
+## Supported Languages
+Below is the list of supported languages and the corresponding versions.
+- gcc 7
+- g++ 7
+- python 3.7
+- java 8 & 11
+
 ## Web page to Submit Assignment
-![](docs/codeRunnerPage.png)
+Use the exposed port number to open the web page. Example - for exposed port number as 52453, hit [http://localhost:52453](https://htmlpreview.github.io/?https://github.com/assignment-exec/code-runner/blob/master/client/index.html) on browser.
+
+![](docs/webPage.png)
 
 Submit your assignment through the web page as shown in the figure above.
+- Initially `Build` and `Run` buttons are disabled. Submit the assignment to enable them.
 - Choose the assignment tar ball.
 - Enter commands to compile and run the code.
-- Enter working directory to run the commands. If not provided then commands will be run at the root assignment directory.
+- Enter working directory to run the commands. If not provided then commands will be run at the assignment root directory.
 - Add command line arguments if required to run the assignment using `Add` button.
-- Click on `Submit` button to upload the details to the server.
-- The status of upload will be displayed in the `Output` section.
-- Click on `Build & Run` button to run the code.
-- The output will be displayed in the `Output` section as shown above.
+- Click on `Submit` button to upload the details to the server. The status of upload will be displayed in the `Output` section.
+- Click on `Build` button to compile the code. The status of build will be displayed in the `Output` section.
+- Click on `Run` button to run the compiled code. The output will be displayed in the `Output` section as shown above.
+
+#### Command Line Arguments
+- Command Line Arguments can be added as key-value pairs. 
+- If specifying only the value, then use the text box on the right hand side.
+
+#### Interpreted Languages
+- Currently, the only supported interpreted language is python.
+- `Build` button remains disabled if the application being run is for any of the interpreted languages.
+- Directly enter command to run.
+- Click on `Run` button directly to run the assignment.
