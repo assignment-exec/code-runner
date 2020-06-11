@@ -16,7 +16,7 @@ Currently the application supports following server features:
 
 #### Unsupported Features
 The list of unsupported features is given below.
-- The application does not support running assignments with interactive outputs. That means it does not accept runtime inputs from user.
+- Does not support running assignments that read in input via standard input (stdin).
 - Does not support downloading of output files.
 
 ## Build and Run Server on local machine
