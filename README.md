@@ -14,6 +14,11 @@ Currently the application supports following server features:
 - Accept assignment tarball, working directory, commands to compile and run, and command line arguments.
 - Extract the files, compile and run the assignment and send the respective outputs to web page.
 
+#### Unsupported Features
+The list of unsupported features is given below.
+- The application does not support running assignments with interactive outputs. That means it does not accept runtime inputs from user.
+- Does not support downloading of output files.
+
 ## Build and Run Server on local machine
 Compile the source code using the `make` tool as shown below.
 ```commandline
